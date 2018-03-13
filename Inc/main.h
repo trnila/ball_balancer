@@ -69,6 +69,10 @@
 #define DEBUG_GPIO_Port GPIOB
 #define HEARTBEAT_Pin GPIO_PIN_1
 #define HEARTBEAT_GPIO_Port GPIOB
+#define SERVO_X_Pin GPIO_PIN_4
+#define SERVO_X_GPIO_Port GPIOB
+#define SERVO_Y_Pin GPIO_PIN_5
+#define SERVO_Y_GPIO_Port GPIOB
 
 /* ########################## Assert Selection ############################## */
 /**
