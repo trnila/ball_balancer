@@ -81,19 +81,13 @@ public:
 		HAL_GPIO_WritePin(GPIOA, pin, state);
 	}
 
-	int adcRead() {
-		configASSERT(HAL_ADC_Start(&hadc1) == HAL_OK);
-		configASSERT(HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY) == HAL_OK);
-
-		int val = HAL_ADC_GetValue(&hadc1);
-		HAL_ADC_Stop(&hadc1);
-		return val;
-	}
-
 	int measure() {
+		configASSERT(HAL_ADC_Start(&hadc1) == HAL_OK);
 		for(int i = 0; i < SAMPLES_NUM; i++) {
-			samples[i] = adcRead();
+			configASSERT(HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY) == HAL_OK);
+			samples[i] = HAL_ADC_GetValue(&hadc1);
 		}
+		HAL_ADC_Stop(&hadc1);
 		for(int i = 0; i < SAMPLES_NUM; i++) {
 			for(int j = 0; j < SAMPLES_NUM - 1; j++) {
 				if(samples[j] > samples[j + 1]) {
