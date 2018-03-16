@@ -1,4 +1,6 @@
 #pragma once
+
+#include <cmsis_os.h>
 #include "ITouch.h"
 
 extern "C" {
@@ -8,7 +10,7 @@ extern "C" {
 #define configASSERT( x ) if ((x) == 0) {asm("bkpt #1"); for( ;; );}
 }
 
-#define SAMPLES_NUM 16
+#define SAMPLES_NUM 32
 
 class STMTouch: public ITouch {
 public:
@@ -22,8 +24,8 @@ public:
 		ADC_ChannelConfTypeDef sConfig;
 		
 		// measure Y
-		pinMode(TOUCH_YP_Pin, GPIO_MODE_ANALOG);
-		pinMode(TOUCH_YM_Pin, GPIO_MODE_ANALOG);
+		pinMode(TOUCH_YP_Pin, GPIO_MODE_INPUT);
+		pinMode(TOUCH_YM_Pin, GPIO_MODE_INPUT);
 		pinMode(TOUCH_XP_Pin, GPIO_MODE_OUTPUT_PP);
 		pinMode(TOUCH_XM_Pin, GPIO_MODE_OUTPUT_PP);
 
@@ -38,8 +40,8 @@ public:
 		Y = measure();
 
 		// ================== X AXIS ================
-		pinMode(TOUCH_XP_Pin, GPIO_MODE_ANALOG);
-		pinMode(TOUCH_XM_Pin, GPIO_MODE_ANALOG);
+		pinMode(TOUCH_XP_Pin, GPIO_MODE_INPUT);
+		pinMode(TOUCH_XM_Pin, GPIO_MODE_INPUT);
 		pinMode(TOUCH_YP_Pin, GPIO_MODE_OUTPUT_PP);
 		pinMode(TOUCH_YM_Pin, GPIO_MODE_OUTPUT_PP);
 
@@ -52,28 +54,13 @@ public:
 		digitalWrite(TOUCH_YM_Pin, GPIO_PIN_RESET);
 
 		X = measure();
-
-
-		// Set X+ to ground
-		pinMode(TOUCH_XP_Pin, GPIO_MODE_OUTPUT_PP);
-		digitalWrite(TOUCH_XP_Pin, GPIO_PIN_RESET);
-
-		// Set Y- to VCC
-		pinMode(TOUCH_YM_Pin, GPIO_MODE_OUTPUT_PP);
-		digitalWrite(TOUCH_YM_Pin, GPIO_PIN_SET);
-
-		// Hi-Z X- and Y+
-		digitalWrite(TOUCH_XM_Pin, GPIO_PIN_RESET);
-		pinMode(TOUCH_XM_Pin, GPIO_MODE_ANALOG);
-		digitalWrite(TOUCH_YP_Pin, GPIO_PIN_RESET);
-		pinMode(TOUCH_YP_Pin, GPIO_MODE_ANALOG);
 	}
 
 	void pinMode(int pin, int mode) {
 		GPIO_InitTypeDef GPIO_InitStruct;
 		GPIO_InitStruct.Pin = pin;
 		GPIO_InitStruct.Mode = mode;
-		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
 		HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 	}
 
@@ -98,7 +85,18 @@ public:
 			}
 		}
 
-		return samples[SAMPLES_NUM / 2];
+		int sum = 0;
+		int ok = 4;
+		int count = 0;
+		for(int i = SAMPLES_NUM / 2 - ok; i < SAMPLES_NUM / 2 + ok; i++) {
+			sum += samples[i];
+			count++;
+		}
+
+		return sum / count;
+
+
+		//return samples[SAMPLES_NUM / 2];
 	}
 
 private:

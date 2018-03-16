@@ -13,13 +13,12 @@ extern "C" {
 	void inputTask(void const * argument);
 };
 
-void set_pwm(uint32_t channel, double val);
-void writeServos(double x, double y);
+void set_pwm(uint32_t channel, int us);
+void writeServos(int x, int y);
 void send(Measurement& measurement);
 
 
 STMTouch touch;
-Filter filter(&touch);
 VelocityTracker tracker(&touch);
 Configuration conf;
 BallBalancer balancer(tracker, conf, writeServos, send);
@@ -82,6 +81,8 @@ void controlTask(void const * argument) {
 	configASSERT(rxcommands = xQueueCreate(5, MAX_BUF));
 	configASSERT(HAL_UART_Receive_IT(&huart1, (uint8_t*) &rxbuffer, 1) == HAL_OK);
 
+	configASSERT(HAL_ADCEx_Calibration_Start(&hadc1) == HAL_OK);
+
 	TickType_t ticks = xTaskGetTickCount();
 
 	for(;;) {
@@ -95,9 +96,9 @@ void controlTask(void const * argument) {
 	}
 }
 
-void set_pwm(uint32_t channel, double val) {
+void set_pwm(uint32_t channel, int us) {
 	TIM_OC_InitTypeDef conf;
-	conf.Pulse = val * htim3.Init.Period;
+	conf.Pulse = us * 3.9063;
 	conf.OCMode = TIM_OCMODE_PWM1;
 	conf.OCPolarity = TIM_OCPOLARITY_HIGH;
 	conf.OCFastMode = TIM_OCFAST_ENABLE;
@@ -105,7 +106,7 @@ void set_pwm(uint32_t channel, double val) {
 	configASSERT(HAL_TIM_PWM_Start_IT(&htim3, channel) == HAL_OK);
 }
 
-void writeServos(double x, double y) {
+void writeServos(int x, int y) {
 	set_pwm(TIM_CHANNEL_1, x);
 	set_pwm(TIM_CHANNEL_2, y);
 }
