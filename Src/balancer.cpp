@@ -5,8 +5,8 @@
 #include "balancer/ball_balancer.h"
 #include "STMTouch.h"
 #include "cmsis_os.h"
+#include "portmacro.h"
 #include "string.h"
-//#include <tim.h>
 
 extern "C" {
 	void controlTask(void const * argument);
@@ -23,6 +23,7 @@ VelocityTracker tracker(&touch);
 Configuration conf;
 ball_balancer balancer(tracker, conf, writeServos, send);
 
+xQueueHandle txqueue;
 Measurement txbuffer;
 
 #define MAX_BUF 32
@@ -81,6 +82,8 @@ void controlTask(void const * argument) {
 	configASSERT(rxcommands = xQueueCreate(5, MAX_BUF));
 	configASSERT(HAL_UART_Receive_IT(&huart1, (uint8_t*) &rxbuffer, 1) == HAL_OK);
 
+	configASSERT(txqueue = xQueueCreate(5, sizeof(Measurement)));
+
 	configASSERT(HAL_ADCEx_Calibration_Start(&hadc1) == HAL_OK);
 
 	TickType_t ticks = xTaskGetTickCount();
@@ -111,7 +114,18 @@ void writeServos(int x, int y) {
 	set_pwm(TIM_CHANNEL_2, y);
 }
 
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
+	if(xQueueReceiveFromISR(txqueue, &txbuffer, nullptr) == pdTRUE) {
+		configASSERT(HAL_UART_Transmit_DMA(&huart1, (uint8_t *) &txbuffer, sizeof(txbuffer)) == HAL_OK);
+	}
+}
+
 void send(Measurement &measurement) {
-	txbuffer = measurement;
-	HAL_UART_Transmit_IT(&huart1, (uint8_t*) &txbuffer, sizeof(txbuffer));
+	UBaseType_t waiting = uxQueueMessagesWaiting(txqueue);
+	if(waiting == 0) {
+		txbuffer = measurement;
+		configASSERT(HAL_UART_Transmit_DMA(&huart1, (uint8_t *) &txbuffer, sizeof(txbuffer)) == HAL_OK);
+	} else {
+		xQueueSend(txqueue, &measurement, 0);
+	}
 }

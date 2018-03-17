@@ -20,13 +20,13 @@ SET(LINKER_SCRIPT $${CMAKE_SOURCE_DIR}/${linkerScript})
 #add_definitions(-DARM_MATH_CM4 -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -D__FPU_PRESENT=1 )
 
 #Uncomment for software floating point
-#SET(FPU_FLAGS "-mfloat-abi=soft")
+SET(FPU_FLAGS "-mfloat-abi=soft")
 
 SET(COMMON_FLAGS "-mcpu=cortex-m3 ${FPU_FLAGS} -mthumb -mthumb-interwork -ffunction-sections -fdata-sections -g -fno-common -fmessage-length=0 -specs=nosys.specs -specs=nano.specs")
 
 SET(CMAKE_CXX_FLAGS_INIT "$${COMMON_FLAGS} -std=c++11")
 SET(CMAKE_C_FLAGS_INIT "$${COMMON_FLAGS} -std=gnu99")
-SET(CMAKE_EXE_LINKER_FLAGS_INIT "-u _printf_float -Wl,-gc-sections -T $${LINKER_SCRIPT}")
+SET(CMAKE_EXE_LINKER_FLAGS_INIT "-Wl,-gc-sections -T $${LINKER_SCRIPT}")
 
 PROJECT(${projectName} C CXX ASM)
 set(CMAKE_CXX_STANDARD 11)
