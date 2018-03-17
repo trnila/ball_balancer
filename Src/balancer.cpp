@@ -2,7 +2,7 @@
 #include <stm32f1xx_hal_tim.h>
 #include "stm32f1xx.h"
 #include "usart.h"
-#include "BallBalancer.h"
+#include "balancer/BallBalancer.h"
 #include "STMTouch.h"
 #include "cmsis_os.h"
 #include "string.h"

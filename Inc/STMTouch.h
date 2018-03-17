@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cmsis_os.h>
-#include "ITouch.h"
+#include "balancer/ITouch.h"
 
 extern "C" {
 	#include "stm32f1xx.h"
