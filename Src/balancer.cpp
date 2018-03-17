@@ -2,7 +2,7 @@
 #include <stm32f1xx_hal_tim.h>
 #include "stm32f1xx.h"
 #include "usart.h"
-#include "balancer/BallBalancer.h"
+#include "balancer/ball_balancer.h"
 #include "STMTouch.h"
 #include "cmsis_os.h"
 #include "string.h"
@@ -21,7 +21,7 @@ void send(Measurement& measurement);
 STMTouch touch;
 VelocityTracker tracker(&touch);
 Configuration conf;
-BallBalancer balancer(tracker, conf, writeServos, send);
+ball_balancer balancer(tracker, conf, writeServos, send);
 
 Measurement txbuffer;
 

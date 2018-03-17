@@ -1,18 +1,16 @@
 #pragma once
 
 #include <cmsis_os.h>
-#include "balancer/ITouch.h"
+#include "balancer/itouch.h"
 
 extern "C" {
 	#include "stm32f1xx.h"
 	#include "adc.h"
-
-#define configASSERT( x ) if ((x) == 0) {asm("bkpt #1"); for( ;; );}
 }
 
 #define SAMPLES_NUM 32
 
-class STMTouch: public ITouch {
+class STMTouch: public itouch {
 public:
 	virtual void read(int &X, int &Y) {
 		r();

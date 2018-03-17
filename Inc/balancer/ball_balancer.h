@@ -1,6 +1,6 @@
 #pragma once
 #include "config.h"
-#include "TouchPanel.h"
+#include "velocity_tracker.h"
 #include "configuration.h"
 
 struct __attribute__((__packed__))  Measurement {
@@ -16,9 +16,9 @@ struct __attribute__((__packed__))  Measurement {
 	float rawx, rawy;
 };
 
-class BallBalancer {
+class ball_balancer {
 public:
-	BallBalancer(
+	ball_balancer(
 			VelocityTracker &tracker,
 			Configuration &conf,
 			void (*writeServos)(int, int),
