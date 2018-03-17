@@ -10,7 +10,6 @@
 
 extern "C" {
 	void controlTask(void const * argument);
-	void inputTask(void const * argument);
 };
 
 void set_pwm(uint32_t channel, int us);
