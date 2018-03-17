@@ -29,13 +29,13 @@ public:
 		pinMode(TOUCH_XP_Pin, GPIO_MODE_OUTPUT_PP);
 		pinMode(TOUCH_XM_Pin, GPIO_MODE_OUTPUT_PP);
 
+		digitalWrite(TOUCH_XP_Pin, GPIO_PIN_SET);
+		digitalWrite(TOUCH_XM_Pin, GPIO_PIN_RESET);
+
 		sConfig.Channel = ADC_CHANNEL_0;
 		sConfig.Rank = 1;
 		sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
 		configASSERT(HAL_ADC_ConfigChannel(&hadc1, &sConfig) == HAL_OK);
-
-		digitalWrite(TOUCH_XP_Pin, GPIO_PIN_SET);
-		digitalWrite(TOUCH_XM_Pin, GPIO_PIN_RESET);
 
 		Y = measure();
 
@@ -45,13 +45,13 @@ public:
 		pinMode(TOUCH_YP_Pin, GPIO_MODE_OUTPUT_PP);
 		pinMode(TOUCH_YM_Pin, GPIO_MODE_OUTPUT_PP);
 
+		digitalWrite(TOUCH_YP_Pin, GPIO_PIN_SET);
+		digitalWrite(TOUCH_YM_Pin, GPIO_PIN_RESET);
+
 		sConfig.Channel = ADC_CHANNEL_1;
 		sConfig.Rank = 1;
 		sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
 		configASSERT(HAL_ADC_ConfigChannel(&hadc1, &sConfig) == HAL_OK);
-
-		digitalWrite(TOUCH_YP_Pin, GPIO_PIN_SET);
-		digitalWrite(TOUCH_YM_Pin, GPIO_PIN_RESET);
 
 		X = measure();
 	}
@@ -86,17 +86,12 @@ public:
 		}
 
 		int sum = 0;
-		int ok = 4;
-		int count = 0;
-		for(int i = SAMPLES_NUM / 2 - ok; i < SAMPLES_NUM / 2 + ok; i++) {
+		int take = 4;
+		for(int i = SAMPLES_NUM / 2 - take; i < SAMPLES_NUM / 2 + take; i++) {
 			sum += samples[i];
-			count++;
 		}
 
-		return sum / count;
-
-
-		//return samples[SAMPLES_NUM / 2];
+		return sum / (take * 2);
 	}
 
 private:

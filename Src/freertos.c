@@ -95,7 +95,7 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the thread(s) */
   /* definition and creation of control */
-  osThreadDef(control, controlTask, osPriorityNormal, 0, 512);
+  osThreadDef(control, controlTask, osPriorityRealtime, 0, 512);
   controlHandle = osThreadCreate(osThread(control), NULL);
 
   /* definition and creation of heartbeat */
@@ -129,8 +129,9 @@ void heartbeatTask(void const * argument)
 {
   /* USER CODE BEGIN heartbeatTask */
   for(;;) {
-    HAL_GPIO_TogglePin(HEARTBEAT_GPIO_Port, HEARTBEAT_Pin);
-    osDelay(500);
+//    HAL_GPIO_TogglePin(HEARTBEAT_GPIO_Port, HEARTBEAT_Pin);
+//    osDelay(1000);
+//	  osDelay(1);
   }
   /* USER CODE END heartbeatTask */
 }
