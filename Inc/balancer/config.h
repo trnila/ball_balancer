@@ -9,8 +9,8 @@ const int CENTER_Y_US = 1000;
 const double SHIFT_MM = 14;
 const int DUTY_MS = 20;
 
-const int SIZE_Y = 170;
-const int SIZE_X = 230;
+const int SIZE_Y = 230;
+const int SIZE_X = 170;
 
 const int MEASUREMENT_PERIOD_MS = 20;
 const int CONTROL_PERIOD_MS = DUTY_MS / MEASUREMENT_PERIOD_MS;
@@ -24,4 +24,4 @@ const int MAX_CMD_ARGS = 6;
 //const int RminX = 8130.0 / 65535 * 4096, RmaxX = 50700.0 / 65535 * 4096;
 
 const int RminX = 366, RmaxX = 3726;
-const int RminY = 378, RmaxY = 2041;
+const int RminY = 378, RmaxY = 3650;
