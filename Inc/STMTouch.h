@@ -12,13 +12,7 @@ extern "C" {
 
 class STMTouch: public itouch {
 public:
-	virtual void read(int &X, int &Y) {
-		r();
-		X = this->X;
-		Y = this->Y;
-	}
-
-	void r() {
+	virtual	void read(int &X, int &Y) {
 		ADC_ChannelConfTypeDef sConfig;
 		
 		// measure Y
@@ -35,7 +29,7 @@ public:
 		sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
 		configASSERT(HAL_ADC_ConfigChannel(&hadc1, &sConfig) == HAL_OK);
 
-		Y = measure();
+		Y = measureAxis();
 
 		// ================== X AXIS ================
 		pinMode(TOUCH_XP_Pin, GPIO_MODE_INPUT);
@@ -51,7 +45,7 @@ public:
 		sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
 		configASSERT(HAL_ADC_ConfigChannel(&hadc1, &sConfig) == HAL_OK);
 
-		X = measure();
+		X = measureAxis();
 	}
 
 	void pinMode(int pin, int mode) {
@@ -66,7 +60,7 @@ public:
 		HAL_GPIO_WritePin(GPIOA, pin, state);
 	}
 
-	int measure() {
+	int measureAxis() {
 		configASSERT(HAL_ADC_Start(&hadc1) == HAL_OK);
 		for(int i = 0; i < SAMPLES_NUM; i++) {
 			configASSERT(HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY) == HAL_OK);
@@ -94,6 +88,4 @@ public:
 
 private:
 	int samples[SAMPLES_NUM];
-
-	int X, Y;
 };
