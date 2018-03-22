@@ -111,8 +111,12 @@ void controlTask(void const * argument) {
 }
 
 void set_pwm(uint32_t channel, int us) {
+	int pulse = us * 3.9063;
+
+	configASSERT(pulse < 0xFFFF);
+
 	TIM_OC_InitTypeDef conf;
-	conf.Pulse = us * 3.9063;
+	conf.Pulse = pulse;
 	conf.OCMode = TIM_OCMODE_PWM1;
 	conf.OCPolarity = TIM_OCPOLARITY_HIGH;
 	conf.OCFastMode = TIM_OCFAST_ENABLE;
