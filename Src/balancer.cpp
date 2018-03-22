@@ -20,7 +20,7 @@ void send(Measurement& measurement);
 STMTouch touch;
 VelocityTracker tracker(&touch);
 Configuration conf;
-ball_balancer balancer(tracker, conf, writeServos, send);
+ball_balancer balancer(tracker, conf);
 
 xQueueHandle txqueue;
 Measurement txbuffer;
@@ -87,9 +87,21 @@ void controlTask(void const * argument) {
 
 	TickType_t ticks = xTaskGetTickCount();
 
+	Measurement measurement;
 	for(;;) {
 		HAL_GPIO_WritePin(DEBUG_GPIO_Port, DEBUG_Pin, GPIO_PIN_SET);
-		balancer.update();
+		if(balancer.update(measurement)) {
+			set_pwm(TIM_CHANNEL_1, measurement.USX);
+			set_pwm(TIM_CHANNEL_2, measurement.USY);
+
+			UBaseType_t waiting = uxQueueMessagesWaiting(txqueue);
+			if(waiting == 0) {
+				txbuffer = measurement;
+				configASSERT(HAL_UART_Transmit_DMA(&huart1, (uint8_t *) &txbuffer, sizeof(txbuffer)) == HAL_OK);
+			} else {
+				xQueueSend(txqueue, &measurement, 0);
+			}
+		}
 		HAL_GPIO_WritePin(DEBUG_GPIO_Port, DEBUG_Pin, GPIO_PIN_RESET);
 
 		handleInput();
@@ -108,23 +120,8 @@ void set_pwm(uint32_t channel, int us) {
 	configASSERT(HAL_TIM_PWM_Start_IT(&htim3, channel) == HAL_OK);
 }
 
-void writeServos(int x, int y) {
-	set_pwm(TIM_CHANNEL_1, x);
-	set_pwm(TIM_CHANNEL_2, y);
-}
-
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
 	if(xQueueReceiveFromISR(txqueue, &txbuffer, nullptr) == pdTRUE) {
 		configASSERT(HAL_UART_Transmit_DMA(&huart1, (uint8_t *) &txbuffer, sizeof(txbuffer)) == HAL_OK);
-	}
-}
-
-void send(Measurement &measurement) {
-	UBaseType_t waiting = uxQueueMessagesWaiting(txqueue);
-	if(waiting == 0) {
-		txbuffer = measurement;
-		configASSERT(HAL_UART_Transmit_DMA(&huart1, (uint8_t *) &txbuffer, sizeof(txbuffer)) == HAL_OK);
-	} else {
-		xQueueSend(txqueue, &measurement, 0);
 	}
 }

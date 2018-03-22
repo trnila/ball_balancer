@@ -20,10 +20,8 @@ class ball_balancer {
 public:
 	ball_balancer(
 			VelocityTracker &tracker,
-			Configuration &conf,
-			void (*writeServos)(int, int),
-			void (*send)(Measurement& measurement)
-	): tracker(tracker), conf(conf), writeServos(writeServos), send(send), controlPeriodMs(CONTROL_PERIOD_MS) {
+			Configuration &conf
+	): tracker(tracker), conf(conf), controlPeriodMs(CONTROL_PERIOD_MS) {
 		reset();
 	}
 
@@ -31,7 +29,7 @@ public:
 		planeNormal = Vector3<double>(0, 0, 1);
 	}
 
-	void update() {
+	bool update(Measurement &meas) {
 		bool updated = tracker.update();
 
 		Vectorf target(SIZE_X / 2, SIZE_Y / 2);
@@ -45,7 +43,9 @@ public:
 			planeNormal = normalize(planeNormal);
 		}
 
-		if(controlPeriodMs == 0 || (controlPeriodMs && i % controlPeriodMs == 0)) {
+
+		bool controlled = controlPeriodMs == 0 || (controlPeriodMs && i % controlPeriodMs == 0);
+		if(controlled) {
 			double zx = planeNormal.x * MX / planeNormal.z;
 			double zy = planeNormal.y * MY / planeNormal.z;
 
@@ -57,10 +57,7 @@ public:
 
 			int USX = CENTER_X_US + DX;
 			int USY = CENTER_Y_US + DY;
-			writeServos(USX, USY);
 
-
-			Measurement meas;
 			meas.magic[0] = 0xAB;
 			meas.magic[1] = 0xCD;
 			meas.cx = change.x; meas.cy = change.y;
@@ -73,9 +70,11 @@ public:
 			meas.USX = USX; meas.USY = USY;
 			meas.rawx = tracker.getRawResistance().x;
 			meas.rawy = tracker.getRawResistance().y;
-			send(meas);
 		}
+
 		i++;
+
+		return controlled;
 	}
 
 	void setControlPeriod(int ms) {
@@ -88,8 +87,6 @@ private:
 
 	VelocityTracker &tracker;
 	Configuration &conf;
-	void (*writeServos)(int, int);
-	void (*send)(Measurement& measurement);
 
 	Vector3<double> planeNormal;
 };
