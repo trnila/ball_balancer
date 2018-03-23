@@ -29,6 +29,7 @@ public:
 		sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
 		configASSERT(HAL_ADC_ConfigChannel(&hadc1, &sConfig) == HAL_OK);
 
+		osDelay(2);
 		Y = measureAxis();
 
 		// ================== X AXIS ================
@@ -45,6 +46,7 @@ public:
 		sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
 		configASSERT(HAL_ADC_ConfigChannel(&hadc1, &sConfig) == HAL_OK);
 
+		osDelay(2);
 		X = measureAxis();
 	}
 
