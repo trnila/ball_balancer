@@ -52,11 +52,16 @@ public:
 			double angleX = zx / PX;
 			double angleY = zy / PY;
 
-			double DX = 10 * angleX * 180 / M_PI; // 1 degree per 10 microseconds
-			double DY = 10 * angleY * 180  / M_PI;
+			/*
+			double DX = angleX * 180 / M_PI;
+			double DY = angleY * 180  / M_PI;
+*/
+			int USX = CENTER_X_US + angleX / 0.5f * 600;
+			int USY = CENTER_Y_US + angleY / 0.5f * 600;
 
-			int USX = CENTER_X_US + DX;
-			int USY = CENTER_Y_US + DY;
+
+
+
 
 			meas.magic[0] = 0xAB;
 			meas.magic[1] = 0xCD;

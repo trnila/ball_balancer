@@ -8,6 +8,7 @@ const int CENTER_X_US = 1500;
 const int CENTER_Y_US = 1500;
 const double SHIFT_MM = 14;
 const int DUTY_MS = 20;
+// 30-16mm
 
 const int SIZE_Y = 230;
 const int SIZE_X = 170;
@@ -19,9 +20,6 @@ const int MAX_CMD_ARGS = 6;
 
 //const int RminY = 10600, RmaxY = 44900;
 //const int RminX = 8130, RmaxX = 50700;
-
-//const int RminY = 10600.0 / 65535 * 4096, RmaxY = 44900.0 / 65535 * 4096;
-//const int RminX = 8130.0 / 65535 * 4096, RmaxX = 50700.0 / 65535 * 4096;
 
 const int RminX = 366, RmaxX = 3726;
 const int RminY = 378, RmaxY = 3650;
