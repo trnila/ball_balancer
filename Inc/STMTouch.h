@@ -6,9 +6,16 @@
 extern "C" {
 	#include "stm32f1xx.h"
 	#include "adc.h"
+	extern osThreadId controlHandle;
+	extern BaseType_t pxHigherPriorityTaskWoken;
 }
 
 #define SAMPLES_NUM 32
+
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
+	vTaskNotifyGiveFromISR(controlHandle, &pxHigherPriorityTaskWoken);
+}
+
 
 class STMTouch: public itouch {
 public:
@@ -61,16 +68,13 @@ public:
 	}
 
 	int measureAxis() {
-		configASSERT(HAL_ADC_Start(&hadc1) == HAL_OK);
-		for(int i = 0; i < SAMPLES_NUM; i++) {
-			configASSERT(HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY) == HAL_OK);
-			samples[i] = HAL_ADC_GetValue(&hadc1);
-		}
-		HAL_ADC_Stop(&hadc1);
+		configASSERT(HAL_ADC_Start_DMA(&hadc1, (uint32_t*) &samples, SAMPLES_NUM) == HAL_OK);
+		ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
 		for(int i = 0; i < SAMPLES_NUM; i++) {
 			for(int j = 0; j < SAMPLES_NUM - 1; j++) {
 				if(samples[j] > samples[j + 1]) {
-					int tmp = samples[j];
+					uint16_t tmp = samples[j];
 					samples[j] = samples[j + 1];
 					samples[j + 1] = tmp;
 				}
@@ -87,5 +91,5 @@ public:
 	}
 
 private:
-	int samples[SAMPLES_NUM];
+	uint16_t samples[SAMPLES_NUM];
 };
