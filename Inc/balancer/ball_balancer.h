@@ -44,8 +44,8 @@ public:
 		}
 
 
-		bool controlled = controlPeriodMs == 0 || (controlPeriodMs && i % controlPeriodMs == 0);
-		if(controlled) {
+		//bool controlled = controlPeriodMs == 0 || (controlPeriodMs && i % controlPeriodMs == 0);
+		//if(controlled) {
 			double zx = planeNormal.x * MX / planeNormal.z;
 			double zy = planeNormal.y * MY / planeNormal.z;
 
@@ -75,11 +75,11 @@ public:
 			meas.USX = USX; meas.USY = USY;
 			meas.rawx = tracker.getRawResistance().x;
 			meas.rawy = tracker.getRawResistance().y;
-		}
+		//}
 
 		i++;
 
-		return controlled;
+		return true;
 	}
 
 	void setControlPeriod(int ms) {
