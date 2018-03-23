@@ -4,8 +4,8 @@
 
 const int MX = 85, MY = 85; // montazni bod kloubu na ose x, y
 const int PX = 29, PY = 29; // delka paky na servu na ose x, y
-const int CENTER_X_US = 1000;
-const int CENTER_Y_US = 1000;
+const int CENTER_X_US = 1500;
+const int CENTER_Y_US = 1500;
 const double SHIFT_MM = 14;
 const int DUTY_MS = 20;
 
