@@ -18,7 +18,7 @@ struct __attribute__((__packed__))  Measurement {
 
 class ball_balancer {
 public:
-	ball_balancer(VelocityTracker &tracker, Configuration &conf): tracker(tracker), conf(conf) {
+	ball_balancer(VelocityTracker &tracker, Configuration &conf): tracker(tracker), conf(conf), target(SIZE_X / 2, SIZE_Y / 2) {
 		reset();
 	}
 
@@ -29,7 +29,6 @@ public:
 	bool update(Measurement &meas) {
 		bool touchDetected = tracker.update();
 
-		Vectorf target(SIZE_X / 2, SIZE_Y / 2);
 		Vectorf speed = tracker.getSpeed();
 		Vectorf accel = tracker.getAcceleration();
 		Vectorf change = conf.const_p * speed + conf.const_d * accel + conf.const_i * (tracker.getPos() - target);
@@ -70,4 +69,6 @@ private:
 	Configuration &conf;
 
 	Vector3<double> planeNormal;
+
+	Vectorf target;
 };
