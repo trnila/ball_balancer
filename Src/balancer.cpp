@@ -115,15 +115,16 @@ void controlTask(void const * argument) {
 		if(balancer.update(measurement)) {
 			set_pwm(TIM_CHANNEL_1, measurement.USX);
 			set_pwm(TIM_CHANNEL_2, measurement.USY);
-
-			UBaseType_t waiting = uxQueueMessagesWaiting(txqueue);
-			if(waiting == 0) {
-				txbuffer = measurement;
-				configASSERT(HAL_UART_Transmit_DMA(&huart1, (uint8_t *) &txbuffer, sizeof(txbuffer)) == HAL_OK);
-			} else {
-				xQueueSend(txqueue, &measurement, 0);
-			}
 		}
+
+		UBaseType_t waiting = uxQueueMessagesWaiting(txqueue);
+		if(waiting == 0) {
+			txbuffer = measurement;
+			configASSERT(HAL_UART_Transmit_DMA(&huart1, (uint8_t *) &txbuffer, sizeof(txbuffer)) == HAL_OK);
+		} else {
+			xQueueSend(txqueue, &measurement, 0);
+		}
+
 		HAL_GPIO_WritePin(DEBUG_GPIO_Port, DEBUG_Pin, GPIO_PIN_RESET);
 
 		handleInput();
