@@ -38,10 +38,10 @@ private:
 
 class VFilter: public IFilter {
 public:
-	VFilter(): prev(0), speed(0) {}
+	VFilter(int threshold): prev(0), speed(0), threshold(threshold) {}
 
 	virtual int process(int z) {
-		if(z == 0) {
+		if(z < threshold) {
 			z = prev + speed;
 		} else {
 			speed = z - prev;
@@ -59,6 +59,7 @@ public:
 private:
 	int prev;
 	int speed;
+	int threshold;
 };
 
 class AvgFilter: public IFilter {
