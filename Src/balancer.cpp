@@ -141,14 +141,7 @@ void set_pwm(uint32_t channel, int us) {
 	int pulse = (double) us*(pow(10, -6))/t;
 
 	configASSERT(pulse < 0xFFFF);
-
-	TIM_OC_InitTypeDef conf;
-	conf.Pulse = pulse;
-	conf.OCMode = TIM_OCMODE_PWM1;
-	conf.OCPolarity = TIM_OCPOLARITY_HIGH;
-	conf.OCFastMode = TIM_OCFAST_ENABLE;
-	configASSERT(HAL_TIM_PWM_ConfigChannel(&htim3, &conf, channel) == HAL_OK);
-	configASSERT(HAL_TIM_PWM_Start_IT(&htim3, channel) == HAL_OK);
+	__HAL_TIM_SET_COMPARE(&htim3, channel, pulse);
 }
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
