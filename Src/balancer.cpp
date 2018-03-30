@@ -134,11 +134,8 @@ void controlTask(void const * argument) {
 }
 
 void set_pwm(uint32_t channel, int us) {
-	int prescaler = 24;
-	int freq = 64000000;
-	double t = 1.0/(freq/(prescaler+1));
-
-	int pulse = (double) us*(pow(10, -6))/t;
+	double t = 1.0 / (HAL_RCC_GetHCLKFreq() / (htim3.Init.Prescaler + 1));
+	int pulse = (double) us * (pow(10, -6)) / t;
 
 	configASSERT(pulse < 0xFFFF);
 	__HAL_TIM_SET_COMPARE(&htim3, channel, pulse);
