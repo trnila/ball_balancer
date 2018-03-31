@@ -13,9 +13,7 @@ extern "C" {
 };
 
 void set_pwm(uint32_t channel, int us);
-void writeServos(int x, int y);
 void send(Measurement& measurement);
-
 
 STMTouch touch;
 VelocityTracker tracker(&touch);
@@ -25,17 +23,40 @@ ball_balancer balancer(tracker, conf);
 xQueueHandle txqueue;
 Measurement txbuffer;
 
-#define MAX_BUF 32
-#define MAX_CMD_ARGS 5
+#define MAX_BUF 64
 char rxbuffer[MAX_BUF];
 int rxpos = 0;
 xQueueHandle rxcommands;
 
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
-	if(rxbuffer[rxpos] == '\n') {
-		rxbuffer[rxpos] = '\0';
-		xQueueSendFromISR(rxcommands, rxbuffer, NULL);
+struct Frame {
+	char buffer[MAX_BUF];
+	int size;
+};
 
+size_t UnStuffData(const uint8_t *ptr, size_t length, uint8_t *dst) {
+	const uint8_t *start = dst, *end = ptr + length;
+	uint8_t code = 0xFF, copy = 0;
+
+	for (; ptr < end; copy--) {
+		if (copy != 0) {
+			*dst++ = *ptr++;
+		} else {
+			if (code != 0xFF)
+				*dst++ = 0;
+			copy = code = *ptr++;
+			if (code == 0)
+				break; /* Source length too long */
+		}
+	}
+	return dst - start;
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
+	if(rxbuffer[rxpos] == 0) {
+		Frame frame;
+		frame.size = rxpos;
+		memcpy(frame.buffer, rxbuffer, rxpos);
+		xQueueSendFromISR(rxcommands, &frame, NULL);
 		rxpos = 0;
 	} else {
 		rxpos = (rxpos + 1) % MAX_BUF;
@@ -45,31 +66,35 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 	configASSERT(x == HAL_OK);
 }
 
-void processCommand(char* cmd, int argc, char** argv) {
-	if(strcmp(cmd, "set_p") == 0 && argc >= 1) {
-		conf.const_p = atof(argv[0]);
-	} else if(strcmp(cmd, "set_d")  == 0 && argc >= 1) {
-		conf.const_d = atof(argv[0]);
-	} else if(strcmp(cmd, "set_i")  == 0 && argc >= 1) {
-		conf.const_i = atof(argv[0]);
+void processCommand(char cmd, char* args) {
+	if(cmd == 0) {
+		balancer.reset();
+	} else if(cmd == 1) {
+		int x = *(int*) args;
+		int y = *(int*) (args + sizeof(int));
+		taskENTER_CRITICAL();
+		balancer.setTargetPosition(x, y);
+		taskEXIT_CRITICAL();
+	} else if(cmd == 2) {
+		double p = *(double*) args;
+		double i = *(double*) (args + sizeof(double));
+		double d = *(double*) (args + sizeof(double) * 2);
+
+		taskENTER_CRITICAL();
+		conf.const_p = p;
+		conf.const_i = i;
+		conf.const_d = d;
+		taskEXIT_CRITICAL();
 	}
 }
 
 void handleInput() {
-	char buffer[MAX_BUF];
-	while(xQueueReceive(rxcommands, &buffer, 0) == pdTRUE) {
-		char* args[MAX_CMD_ARGS];
+	Frame frame;
+	while(xQueueReceive(rxcommands, &frame, 0) == pdTRUE) {
+		char buffer[MAX_BUF];
 
-		char *tok = strtok(buffer, " ");
-		char *cmd = tok;
-
-		int i = 0;
-		while(tok && i < MAX_CMD_ARGS) {
-			args[i] = tok = strtok(NULL, " ");
-			i++;
-		}
-
-		processCommand(cmd, i - 1, args);
+		UnStuffData(reinterpret_cast<const uint8_t *>(frame.buffer), frame.size, reinterpret_cast<uint8_t *>(buffer));
+		processCommand(*buffer, buffer + 1);
 	}
 }
 

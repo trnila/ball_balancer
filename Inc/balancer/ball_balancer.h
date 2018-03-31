@@ -64,6 +64,10 @@ public:
 		return touchDetected;
 	}
 
+	void setTargetPosition(int x, int y) {
+		target = Vectorf(x, y);
+	}
+
 private:
 	VelocityTracker &tracker;
 	Configuration &conf;
