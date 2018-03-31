@@ -58,6 +58,7 @@
 /* Variables -----------------------------------------------------------------*/
 osThreadId controlHandle;
 osThreadId heartbeatHandle;
+osThreadId uartHandle;
 
 /* USER CODE BEGIN Variables */
 /* USER CODE END Variables */
@@ -65,6 +66,7 @@ osThreadId heartbeatHandle;
 /* Function prototypes -------------------------------------------------------*/
 void controlTask(void const * argument);
 void heartbeatTask(void const * argument);
+extern void uartTask(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -101,6 +103,10 @@ void MX_FREERTOS_Init(void) {
   /* definition and creation of heartbeat */
   osThreadDef(heartbeat, heartbeatTask, osPriorityIdle, 0, 128);
   heartbeatHandle = osThreadCreate(osThread(heartbeat), NULL);
+
+  /* definition and creation of uart */
+  osThreadDef(uart, uartTask, osPriorityIdle, 0, 128);
+  uartHandle = osThreadCreate(osThread(uart), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
