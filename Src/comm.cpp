@@ -12,6 +12,11 @@ extern "C" {
 	void uartTask(void const * argument);
 }
 
+const uint8_t CMD_RESET = 0;
+const uint8_t CMD_POS = 1;
+const uint8_t CMD_PID = 2;
+const uint8_t CMD_RESPONSE = 128;
+
 Measurement txbuffer;
 
 #define MAX_BUF 32
@@ -59,16 +64,17 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 	configASSERT(HAL_UART_Receive_IT(&huart1, (uint8_t*) currentFrame.buffer + currentFrame.size, 1) == HAL_OK);
 }
 
-void processCommand(char cmd, char* args) {
-	if(cmd == 0) {
+void processCommand(uint8_t cmd, char* args) {
+	if(cmd == CMD_RESET) {
 		balancer.reset();
-	} else if(cmd == 1) {
+	} else if(cmd == CMD_POS) {
 		int x = *(int*) args;
 		int y = *(int*) (args + sizeof(int));
+
 		taskENTER_CRITICAL();
 		balancer.setTargetPosition(x, y);
 		taskEXIT_CRITICAL();
-	} else if(cmd == 2) {
+	} else if(cmd == CMD_PID) {
 		double p = *(double*) args;
 		double i = *(double*) (args + sizeof(double));
 		double d = *(double*) (args + sizeof(double) * 2);
@@ -78,6 +84,8 @@ void processCommand(char cmd, char* args) {
 		conf.const_i = i;
 		conf.const_d = d;
 		taskEXIT_CRITICAL();
+	} else {
+
 	}
 }
 
@@ -91,6 +99,11 @@ void uartTask(void const * argument) {
 		char decoded[MAX_BUF];
 
 		UnStuffData(reinterpret_cast<const uint8_t *>(frame.buffer), frame.size, reinterpret_cast<uint8_t *>(decoded));
-		processCommand(*decoded, decoded + 1);
+
+		uint8_t cmd = *decoded;
+		// align data, otherwise conversion from double will crash
+		memmove(decoded, decoded + 1, frame.size);
+
+		processCommand(cmd, decoded);
 	}
 }
