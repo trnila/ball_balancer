@@ -96,7 +96,6 @@ extern "C" void uart_init() {
 }
 
 // FIXME: crashes when on stack? even when aligned
-double r[3];
 void processCommand(uint8_t cmd, char* args) {
 	if(cmd == CMD_RESET) {
 		balancer.reset();
@@ -126,6 +125,7 @@ void processCommand(uint8_t cmd, char* args) {
 
 		send_command(CMD_GETPOS | CMD_RESPONSE, (char*) &result, sizeof(result));
 	} else if(cmd == CMD_GETPID) {
+		double r[3];
 		taskENTER_CRITICAL();
 		r[0] = conf.const_p;
 		r[1] = conf.const_i;
@@ -137,7 +137,7 @@ void processCommand(uint8_t cmd, char* args) {
 		int result[] = {SIZE_X, SIZE_Y};
 		send_command(CMD_GETDIM | CMD_RESPONSE, (char*) &result, sizeof(result));
 	} else {
-		configASSERT(0);
+		//configASSERT(0);
 	}
 }
 
