@@ -31,6 +31,10 @@ public:
 		target = Vectorf(x, y);
 	}
 
+	const Vectorf getTargetPosition() const {
+		return target;
+	}
+
 private:
 	VelocityTracker &tracker;
 	Configuration &conf;

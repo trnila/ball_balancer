@@ -44,11 +44,14 @@ buffer_pool<Frame> tx(8);
 Frame currentFrame;
 Frame *lastTxFrame = nullptr;
 char prepareBuffer[MAX_BUF];
+volatile int transmitting = 0;
 
 void send_command(uint8_t cmd, char *data, int size) {
 	const int HEADER_SIZE = 1;
 
+	taskENTER_CRITICAL();
 	Frame *buffer = tx.borrow();
+	taskEXIT_CRITICAL();
 	configASSERT(buffer);
 	configASSERT(size + HEADER_SIZE < MAX_BUF);
 
@@ -128,9 +131,12 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 }
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
+	transmitting = 0;
 	xTaskNotifyFromISR(uartHandle, TX_BIT, eSetBits, &xHigherPriorityTaskWoken);
 }
 
+// FIXME: crashes when on stack? even when aligned
+double r[3];
 void processCommand(uint8_t cmd, char* args) {
 	if(cmd == CMD_RESET) {
 		balancer.reset();
@@ -151,8 +157,24 @@ void processCommand(uint8_t cmd, char* args) {
 		conf.const_i = i;
 		conf.const_d = d;
 		taskEXIT_CRITICAL();
+	} else if(cmd == CMD_GETPOS) {
+		int result[2];
+		taskENTER_CRITICAL();
+		result[0] = (int) balancer.getTargetPosition().x;
+		result[1] = (int) balancer.getTargetPosition().y;
+		taskEXIT_CRITICAL();
+
+		send_command(CMD_GETPOS | CMD_RESPONSE, (char*) &result, sizeof(result));
+	} else if(cmd == CMD_GETPID) {
+		taskENTER_CRITICAL();
+		r[0] = conf.const_p;
+		r[1] = conf.const_i;
+		r[2] = conf.const_d;
+		taskEXIT_CRITICAL();
+
+		send_command(CMD_GETPID | CMD_RESPONSE, (char*) &r, sizeof(r));
 	} else {
-		//configASSERT(0);
+		configASSERT(0);
 	}
 }
 
@@ -167,17 +189,21 @@ void uartTask(void const * argument) {
 		uint32_t notifiedValue;
 		configASSERT(xTaskNotifyWait( pdFALSE, RX_BIT, &notifiedValue, portMAX_DELAY) == pdPASS);
 
-		if((notifiedValue & TX_BIT) != 0) {
+		if(transmitting == 0 && (notifiedValue & TX_BIT) != 0) {
 			Frame *frame = nullptr;
 			if(xQueueReceive(tx_queue, &frame, 0) == pdTRUE) {
 				if(lastTxFrame) {
+					taskENTER_CRITICAL();
 					tx.give(lastTxFrame);
+					taskEXIT_CRITICAL();
 				}
 
 				configASSERT(frame);
 				configASSERT(frame->size > 0);
 				configASSERT(frame->size < MAX_BUF);
 				lastTxFrame = frame;
+
+				transmitting = 1;
 				configASSERT(HAL_UART_Transmit_DMA(&huart1, (uint8_t *) frame->buffer, frame->size) == HAL_OK);
 			}
 		}
