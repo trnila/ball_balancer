@@ -11,33 +11,30 @@ extern "C" {
 #include "comm.h"
 #include <climits>
 #include "cmsis_os.h"
-
-extern "C" {
-	void uartTask(void const * argument);
-	extern osThreadId uartHandle;
-}
+#include "uart_encoder.h"
 
 #define TX_BIT    0x01
 #define RX_BIT    0x02
 
-extern BaseType_t xHigherPriorityTaskWoken;
-
-size_t StuffData(const uint8_t *ptr, size_t length, uint8_t *dst);
-
 #define MAX_BUF 128
+
+extern "C" {
+	void uartTask(void const * argument);
+	extern osThreadId uartHandle;
+	extern BaseType_t xHigherPriorityTaskWoken;
+}
+
+extern Configuration conf;
+extern ball_balancer balancer;
+
 
 struct Frame {
 	char buffer[MAX_BUF];
 	int size;
 };
 
-extern buffer_pool<Frame> tx;
-
 xQueueHandle rxcommands;
 xQueueHandle tx_queue;
-
-extern Configuration conf;
-extern ball_balancer balancer;
 
 buffer_pool<Frame> tx(8);
 
@@ -60,7 +57,7 @@ void send_command(uint8_t cmd, char *data, int size) {
 	memcpy(prepareBuffer + 1, data, size);
 
 	// encode frame
-	buffer->size = StuffData((uint8_t*) prepareBuffer, size + HEADER_SIZE, (uint8_t*) buffer->buffer);
+	buffer->size = stuff_data((uint8_t*) prepareBuffer, size + HEADER_SIZE, (uint8_t*) buffer->buffer);
 
 	// add terminator
 	buffer->buffer[buffer->size] = '\0';
@@ -68,49 +65,6 @@ void send_command(uint8_t cmd, char *data, int size) {
 
 	configASSERT(xQueueSend(tx_queue, &buffer, portMAX_DELAY) == pdPASS);
 	xTaskNotify(uartHandle, TX_BIT, eSetBits);
-}
-
-size_t UnStuffData(const uint8_t *ptr, size_t length, uint8_t *dst) {
-	const uint8_t *start = dst, *end = ptr + length;
-	uint8_t code = 0xFF, copy = 0;
-
-	for (; ptr < end; copy--) {
-		if (copy != 0) {
-			*dst++ = *ptr++;
-		} else {
-			if (code != 0xFF)
-				*dst++ = 0;
-			copy = code = *ptr++;
-			if (code == 0)
-				break; /* Source length too long */
-		}
-	}
-	return dst - start;
-}
-
-#define StartBlock()	(code_ptr = dst++, code = 1)
-#define FinishBlock()	(*code_ptr = code)
-
-size_t StuffData(const uint8_t *ptr, size_t length, uint8_t *dst)
-{
-	const uint8_t *start = dst, *end = ptr + length;
-	uint8_t code, *code_ptr; /* Where to insert the leading count */
-
-	StartBlock();
-	while (ptr < end) {
-		if (code != 0xFF) {
-			uint8_t c = *ptr++;
-			if (c != 0) {
-				*dst++ = c;
-				code++;
-				continue;
-			}
-		}
-		FinishBlock();
-		StartBlock();
-	}
-	FinishBlock();
-	return dst - start;
 }
 
 
@@ -133,6 +87,12 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
 	transmitting = 0;
 	xTaskNotifyFromISR(uartHandle, TX_BIT, eSetBits, &xHigherPriorityTaskWoken);
+}
+
+extern "C" void uart_init() {
+	configASSERT(rxcommands = xQueueCreate(5, sizeof(currentFrame)));
+	configASSERT(tx_queue = xQueueCreate(5, sizeof(Frame*)));
+	configASSERT(HAL_UART_Receive_IT(&huart1, (uint8_t*) &currentFrame.buffer, 1) == HAL_OK);
 }
 
 // FIXME: crashes when on stack? even when aligned
@@ -181,12 +141,6 @@ void processCommand(uint8_t cmd, char* args) {
 	}
 }
 
-extern "C" void uart_init() {
-	configASSERT(rxcommands = xQueueCreate(5, sizeof(currentFrame)));
-	configASSERT(tx_queue = xQueueCreate(5, sizeof(Frame*)));
-	configASSERT(HAL_UART_Receive_IT(&huart1, (uint8_t*) &currentFrame.buffer, 1) == HAL_OK);
-}
-
 void uartTask(void const * argument) {
 	for(;;) {
 		uint32_t notifiedValue;
@@ -216,7 +170,7 @@ void uartTask(void const * argument) {
 			while(xQueueReceive(rxcommands, &frame, 0) == pdTRUE) {
 				char decoded[MAX_BUF];
 
-				UnStuffData(reinterpret_cast<const uint8_t *>(frame.buffer), frame.size, reinterpret_cast<uint8_t *>(decoded));
+				unstuff_data(reinterpret_cast<const uint8_t *>(frame.buffer), frame.size, reinterpret_cast<uint8_t *>(decoded));
 
 				uint8_t cmd = *decoded;
 				// align data, otherwise conversion from double will crash
