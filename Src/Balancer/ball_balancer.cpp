@@ -23,8 +23,6 @@ bool ball_balancer::update(Measurement &meas) {
 	int USX = CENTER_X_US + angleX / 0.5f * 600;
 	int USY = CENTER_Y_US + angleY / 0.5f * 600;
 
-	meas.magic[0] = 0xAB;
-	meas.magic[1] = 0xCD;
 	meas.cx = change.x; meas.cy = change.y;
 	meas.vx = speed.x; meas.vy = speed.y;
 	meas.posx = (float) tracker.getPos().x; meas.posy = (float) tracker.getPos().y;

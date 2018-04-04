@@ -3,8 +3,7 @@
 #include "velocity_tracker.h"
 #include "configuration.h"
 
-struct __attribute__((__packed__))  Measurement {
-	char magic[2];
+struct Measurement {
 	float cx, cy;
 	float vx, vy;
 	float posx, posy;

@@ -7,30 +7,65 @@ extern "C" {
 	#include <task.h>
 }
 #include "balancer/ball_balancer.h"
+#include "buffer.h"
+#include "comm.h"
+#include <climits>
+#include "cmsis_os.h"
 
 extern "C" {
 	void uartTask(void const * argument);
+	extern osThreadId uartHandle;
 }
 
-const uint8_t CMD_RESET = 0;
-const uint8_t CMD_POS = 1;
-const uint8_t CMD_PID = 2;
-const uint8_t CMD_RESPONSE = 128;
+#define TX_BIT    0x01
+#define RX_BIT    0x02
 
-Measurement txbuffer;
+extern BaseType_t xHigherPriorityTaskWoken;
 
-#define MAX_BUF 32
-xQueueHandle rxcommands;
+size_t StuffData(const uint8_t *ptr, size_t length, uint8_t *dst);
 
-extern Configuration conf;
-extern ball_balancer balancer;
+#define MAX_BUF 128
 
 struct Frame {
 	char buffer[MAX_BUF];
 	int size;
 };
 
+extern buffer_pool<Frame> tx;
+
+xQueueHandle rxcommands;
+xQueueHandle tx_queue;
+
+extern Configuration conf;
+extern ball_balancer balancer;
+
+buffer_pool<Frame> tx(8);
+
 Frame currentFrame;
+Frame *lastTxFrame = nullptr;
+char prepareBuffer[MAX_BUF];
+
+void send_command(uint8_t cmd, char *data, int size) {
+	const int HEADER_SIZE = 1;
+
+	Frame *buffer = tx.borrow();
+	configASSERT(buffer);
+	configASSERT(size + HEADER_SIZE < MAX_BUF);
+
+	// create frame
+	prepareBuffer[0] = cmd;
+	memcpy(prepareBuffer + 1, data, size);
+
+	// encode frame
+	buffer->size = StuffData((uint8_t*) prepareBuffer, size + HEADER_SIZE, (uint8_t*) buffer->buffer);
+
+	// add terminator
+	buffer->buffer[buffer->size] = '\0';
+	buffer->size++;
+
+	configASSERT(xQueueSend(tx_queue, &buffer, portMAX_DELAY) == pdPASS);
+	xTaskNotify(uartHandle, TX_BIT, eSetBits);
+}
 
 size_t UnStuffData(const uint8_t *ptr, size_t length, uint8_t *dst) {
 	const uint8_t *start = dst, *end = ptr + length;
@@ -50,10 +85,38 @@ size_t UnStuffData(const uint8_t *ptr, size_t length, uint8_t *dst) {
 	return dst - start;
 }
 
+#define StartBlock()	(code_ptr = dst++, code = 1)
+#define FinishBlock()	(*code_ptr = code)
+
+size_t StuffData(const uint8_t *ptr, size_t length, uint8_t *dst)
+{
+	const uint8_t *start = dst, *end = ptr + length;
+	uint8_t code, *code_ptr; /* Where to insert the leading count */
+
+	StartBlock();
+	while (ptr < end) {
+		if (code != 0xFF) {
+			uint8_t c = *ptr++;
+			if (c != 0) {
+				*dst++ = c;
+				code++;
+				continue;
+			}
+		}
+		FinishBlock();
+		StartBlock();
+	}
+	FinishBlock();
+	return dst - start;
+}
+
+
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 	if(currentFrame.buffer[currentFrame.size] == 0) {
 		xQueueSendFromISR(rxcommands, &currentFrame, NULL);
 		currentFrame.size = 0;
+
+		xTaskNotifyFromISR(uartHandle, RX_BIT, eSetBits, &xHigherPriorityTaskWoken);
 	} else {
 		currentFrame.size++;
 		if(currentFrame.size >= MAX_BUF) {
@@ -62,6 +125,10 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 	}
 
 	configASSERT(HAL_UART_Receive_IT(&huart1, (uint8_t*) currentFrame.buffer + currentFrame.size, 1) == HAL_OK);
+}
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
+	xTaskNotifyFromISR(uartHandle, TX_BIT, eSetBits, &xHigherPriorityTaskWoken);
 }
 
 void processCommand(uint8_t cmd, char* args) {
@@ -85,25 +152,49 @@ void processCommand(uint8_t cmd, char* args) {
 		conf.const_d = d;
 		taskEXIT_CRITICAL();
 	} else {
-
+		//configASSERT(0);
 	}
 }
 
-void uartTask(void const * argument) {
+extern "C" void uart_init() {
 	configASSERT(rxcommands = xQueueCreate(5, sizeof(currentFrame)));
+	configASSERT(tx_queue = xQueueCreate(5, sizeof(Frame*)));
 	configASSERT(HAL_UART_Receive_IT(&huart1, (uint8_t*) &currentFrame.buffer, 1) == HAL_OK);
+}
 
+void uartTask(void const * argument) {
 	for(;;) {
-		Frame frame{};
-		configASSERT(xQueueReceive(rxcommands, &frame, portMAX_DELAY) == pdTRUE);
-		char decoded[MAX_BUF];
+		uint32_t notifiedValue;
+		configASSERT(xTaskNotifyWait( pdFALSE, RX_BIT, &notifiedValue, portMAX_DELAY) == pdPASS);
 
-		UnStuffData(reinterpret_cast<const uint8_t *>(frame.buffer), frame.size, reinterpret_cast<uint8_t *>(decoded));
+		if((notifiedValue & TX_BIT) != 0) {
+			Frame *frame = nullptr;
+			if(xQueueReceive(tx_queue, &frame, 0) == pdTRUE) {
+				if(lastTxFrame) {
+					tx.give(lastTxFrame);
+				}
 
-		uint8_t cmd = *decoded;
-		// align data, otherwise conversion from double will crash
-		memmove(decoded, decoded + 1, frame.size);
+				configASSERT(frame);
+				configASSERT(frame->size > 0);
+				configASSERT(frame->size < MAX_BUF);
+				lastTxFrame = frame;
+				configASSERT(HAL_UART_Transmit_DMA(&huart1, (uint8_t *) frame->buffer, frame->size) == HAL_OK);
+			}
+		}
 
-		processCommand(cmd, decoded);
+		if((notifiedValue & RX_BIT) != 0) {
+			Frame frame{};
+			while(xQueueReceive(rxcommands, &frame, 0) == pdTRUE) {
+				char decoded[MAX_BUF];
+
+				UnStuffData(reinterpret_cast<const uint8_t *>(frame.buffer), frame.size, reinterpret_cast<uint8_t *>(decoded));
+
+				uint8_t cmd = *decoded;
+				// align data, otherwise conversion from double will crash
+				memmove(decoded, decoded + 1, frame.size);
+
+				processCommand(cmd, decoded);
+			}
+		}
 	}
 }

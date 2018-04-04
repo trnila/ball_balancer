@@ -7,6 +7,7 @@
 #include "cmsis_os.h"
 #include "portmacro.h"
 #include "string.h"
+#include "comm.h"
 
 extern "C" {
 	void controlTask(void const * argument);
@@ -16,8 +17,6 @@ STMTouch touch;
 VelocityTracker tracker(&touch);
 Configuration conf;
 ball_balancer balancer(tracker, conf);
-
-extern Measurement txbuffer;
 
 void set_pwm(uint32_t channel, int us) {
 	double t = 1.0 / (HAL_RCC_GetHCLKFreq() / (htim3.Init.Prescaler + 1));
@@ -65,8 +64,10 @@ void controlTask(void const * argument) {
 			set_pwm(TIM_CHANNEL_2, measurement.USY);
 		}
 
-		txbuffer = measurement;
-		configASSERT(HAL_UART_Transmit_DMA(&huart1, (uint8_t *) &txbuffer, sizeof(txbuffer)) == HAL_OK);
+
+		send_command(CMD_MEASUREMENT, (char*) &measurement, sizeof(measurement));
+		//txbuffer = measurement;
+		//configASSERT(HAL_UART_Transmit_DMA(&huart1, (uint8_t *) &txbuffer, sizeof(txbuffer)) == HAL_OK);
 
 		HAL_GPIO_WritePin(DEBUG_GPIO_Port, DEBUG_Pin, GPIO_PIN_RESET);
 
