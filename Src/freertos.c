@@ -106,7 +106,7 @@ void MX_FREERTOS_Init(void) {
   heartbeatHandle = osThreadCreate(osThread(heartbeat), NULL);
 
   /* definition and creation of uart */
-  osThreadDef(uart, uartTask, osPriorityIdle, 0, 128);
+  osThreadDef(uart, uartTask, osPriorityIdle, 0, 256);
   uartHandle = osThreadCreate(osThread(uart), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
