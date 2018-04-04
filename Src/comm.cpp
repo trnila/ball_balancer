@@ -173,6 +173,9 @@ void processCommand(uint8_t cmd, char* args) {
 		taskEXIT_CRITICAL();
 
 		send_command(CMD_GETPID | CMD_RESPONSE, (char*) &r, sizeof(r));
+	} else if(cmd == CMD_GETDIM) {
+		int result[] = {SIZE_X, SIZE_Y};
+		send_command(CMD_GETDIM | CMD_RESPONSE, (char*) &result, sizeof(result));
 	} else {
 		configASSERT(0);
 	}

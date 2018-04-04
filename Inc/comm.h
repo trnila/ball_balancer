@@ -10,6 +10,7 @@ const uint8_t CMD_PID = 2;
 
 const uint8_t CMD_GETPOS = CMD_GETTER | CMD_POS;
 const uint8_t CMD_GETPID = CMD_GETTER | CMD_PID;
+const uint8_t CMD_GETDIM = CMD_GETTER | (CMD_PID + 1);
 
 const uint8_t CMD_MEASUREMENT = 0 | CMD_RESPONSE;
 
