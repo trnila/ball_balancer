@@ -33,14 +33,15 @@ struct Frame {
 	int size;
 };
 
-xQueueHandle rxcommands;
+xQueueHandle rx_queue;
 xQueueHandle tx_queue;
 
-buffer_pool<Frame> tx(8);
+buffer_pool<Frame> tx(8), rx(8);
 
-Frame currentFrame;
+Frame *currentFrame;
 Frame *lastTxFrame = nullptr;
 char prepareBuffer[MAX_BUF];
+char decoded[MAX_BUF];
 volatile int transmitting = 0;
 
 void send_command(uint8_t cmd, char *data, int size) {
@@ -69,19 +70,22 @@ void send_command(uint8_t cmd, char *data, int size) {
 
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
-	if(currentFrame.buffer[currentFrame.size] == 0) {
-		xQueueSendFromISR(rxcommands, &currentFrame, NULL);
-		currentFrame.size = 0;
+	if(currentFrame->buffer[currentFrame->size] == 0) {
+		xQueueSendFromISR(rx_queue, &currentFrame, NULL);
+
+		currentFrame = rx.borrow();
+		configASSERT(currentFrame);
+		currentFrame->size = 0;
 
 		xTaskNotifyFromISR(uartHandle, RX_BIT, eSetBits, &xHigherPriorityTaskWoken);
 	} else {
-		currentFrame.size++;
-		if(currentFrame.size >= MAX_BUF) {
-			currentFrame.size = 0;
+		currentFrame->size++;
+		if(currentFrame->size >= MAX_BUF) {
+			currentFrame->size = 0;
 		}
 	}
 
-	configASSERT(HAL_UART_Receive_IT(&huart1, (uint8_t*) currentFrame.buffer + currentFrame.size, 1) == HAL_OK);
+	configASSERT(HAL_UART_Receive_IT(&huart1, (uint8_t*) currentFrame->buffer + currentFrame->size, 1) == HAL_OK);
 }
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
@@ -90,9 +94,12 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
 }
 
 extern "C" void uart_init() {
-	configASSERT(rxcommands = xQueueCreate(5, sizeof(currentFrame)));
+	currentFrame = rx.borrow();
+	currentFrame->size = 0;
+
+	configASSERT(rx_queue = xQueueCreate(5, sizeof(Frame*)));
 	configASSERT(tx_queue = xQueueCreate(5, sizeof(Frame*)));
-	configASSERT(HAL_UART_Receive_IT(&huart1, (uint8_t*) &currentFrame.buffer, 1) == HAL_OK);
+	configASSERT(HAL_UART_Receive_IT(&huart1, (uint8_t*) currentFrame->buffer, 1) == HAL_OK);
 }
 
 // FIXME: crashes when on stack? even when aligned
@@ -166,17 +173,19 @@ void uartTask(void const * argument) {
 		}
 
 		if((notifiedValue & RX_BIT) != 0) {
-			Frame frame{};
-			while(xQueueReceive(rxcommands, &frame, 0) == pdTRUE) {
-				char decoded[MAX_BUF];
-
-				unstuff_data(reinterpret_cast<const uint8_t *>(frame.buffer), frame.size, reinterpret_cast<uint8_t *>(decoded));
+			Frame *frame;
+			while(xQueueReceive(rx_queue, &frame, 0) == pdTRUE) {
+				unstuff_data(reinterpret_cast<const uint8_t *>(frame->buffer), frame->size, reinterpret_cast<uint8_t *>(decoded));
 
 				uint8_t cmd = *decoded;
 				// align data, otherwise conversion from double will crash
-				memmove(decoded, decoded + 1, frame.size);
+				memmove(decoded, decoded + 1, frame->size);
 
 				processCommand(cmd, decoded);
+
+				portDISABLE_INTERRUPTS();
+				rx.give(frame);
+				portENABLE_INTERRUPTS();
 			}
 		}
 	}
