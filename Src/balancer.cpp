@@ -64,11 +64,7 @@ void controlTask(void const * argument) {
 			set_pwm(TIM_CHANNEL_2, measurement.USY);
 		}
 
-
 		send_command(CMD_MEASUREMENT, (char*) &measurement, sizeof(measurement));
-		//txbuffer = measurement;
-		//configASSERT(HAL_UART_Transmit_DMA(&huart1, (uint8_t *) &txbuffer, sizeof(txbuffer)) == HAL_OK);
-
 		HAL_GPIO_WritePin(DEBUG_GPIO_Port, DEBUG_Pin, GPIO_PIN_RESET);
 
 		vTaskDelayUntil(&ticks, MEASUREMENT_PERIOD_MS);
