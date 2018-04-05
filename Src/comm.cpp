@@ -38,11 +38,14 @@ xQueueHandle tx_queue;
 
 buffer_pool<Frame> tx(8), rx(8);
 
-Frame *currentFrame;
-Frame *lastTxFrame = nullptr;
-char prepareBuffer[MAX_BUF];
-char decoded[MAX_BUF];
 volatile int transmitting = 0;
+Frame *current_rx_frame = nullptr;
+Frame *current_tx_frame = nullptr;
+
+// temporary buffer used for building frame
+char prepare_buffer[MAX_BUF];
+// buffer for decoded message
+char decoded_buffer[MAX_BUF];
 
 void send_command(uint8_t cmd, char *data, int size) {
 	const int HEADER_SIZE = 1;
@@ -54,11 +57,11 @@ void send_command(uint8_t cmd, char *data, int size) {
 	configASSERT(size + HEADER_SIZE < MAX_BUF);
 
 	// create frame
-	prepareBuffer[0] = cmd;
-	memcpy(prepareBuffer + 1, data, size);
+	prepare_buffer[0] = cmd;
+	memcpy(prepare_buffer + 1, data, size);
 
 	// encode frame
-	buffer->size = stuff_data((uint8_t*) prepareBuffer, size + HEADER_SIZE, (uint8_t*) buffer->buffer);
+	buffer->size = stuff_data((uint8_t*) prepare_buffer, size + HEADER_SIZE, (uint8_t*) buffer->buffer);
 
 	// add terminator
 	buffer->buffer[buffer->size] = '\0';
@@ -70,22 +73,22 @@ void send_command(uint8_t cmd, char *data, int size) {
 
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
-	if(currentFrame->buffer[currentFrame->size] == 0) {
-		xQueueSendFromISR(rx_queue, &currentFrame, NULL);
+	if(current_rx_frame->buffer[current_rx_frame->size] == 0) {
+		xQueueSendFromISR(rx_queue, &current_rx_frame, NULL);
 
-		currentFrame = rx.borrow();
-		configASSERT(currentFrame);
-		currentFrame->size = 0;
+		current_rx_frame = rx.borrow();
+		configASSERT(current_rx_frame);
+		current_rx_frame->size = 0;
 
 		xTaskNotifyFromISR(uartHandle, RX_BIT, eSetBits, &xHigherPriorityTaskWoken);
 	} else {
-		currentFrame->size++;
-		if(currentFrame->size >= MAX_BUF) {
-			currentFrame->size = 0;
+		current_rx_frame->size++;
+		if(current_rx_frame->size >= MAX_BUF) {
+			current_rx_frame->size = 0;
 		}
 	}
 
-	configASSERT(HAL_UART_Receive_IT(&huart1, (uint8_t*) currentFrame->buffer + currentFrame->size, 1) == HAL_OK);
+	configASSERT(HAL_UART_Receive_IT(&huart1, (uint8_t*) current_rx_frame->buffer + current_rx_frame->size, 1) == HAL_OK);
 }
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
@@ -94,15 +97,14 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
 }
 
 extern "C" void uart_init() {
-	currentFrame = rx.borrow();
-	currentFrame->size = 0;
+	current_rx_frame = rx.borrow();
+	current_rx_frame->size = 0;
 
 	configASSERT(rx_queue = xQueueCreate(5, sizeof(Frame*)));
 	configASSERT(tx_queue = xQueueCreate(5, sizeof(Frame*)));
-	configASSERT(HAL_UART_Receive_IT(&huart1, (uint8_t*) currentFrame->buffer, 1) == HAL_OK);
+	configASSERT(HAL_UART_Receive_IT(&huart1, (uint8_t*) current_rx_frame->buffer, 1) == HAL_OK);
 }
 
-// FIXME: crashes when on stack? even when aligned
 void processCommand(uint8_t cmd, char* args) {
 	if(cmd == CMD_RESET) {
 		balancer.reset();
@@ -156,16 +158,16 @@ void uartTask(void const * argument) {
 		if(transmitting == 0 && (notifiedValue & TX_BIT) != 0) {
 			Frame *frame = nullptr;
 			if(xQueueReceive(tx_queue, &frame, 0) == pdTRUE) {
-				if(lastTxFrame) {
+				if(current_tx_frame) {
 					taskENTER_CRITICAL();
-					tx.give(lastTxFrame);
+					tx.give(current_tx_frame);
 					taskEXIT_CRITICAL();
 				}
 
 				configASSERT(frame);
 				configASSERT(frame->size > 0);
 				configASSERT(frame->size < MAX_BUF);
-				lastTxFrame = frame;
+				current_tx_frame = frame;
 
 				transmitting = 1;
 				configASSERT(HAL_UART_Transmit_DMA(&huart1, (uint8_t *) frame->buffer, frame->size) == HAL_OK);
@@ -175,13 +177,13 @@ void uartTask(void const * argument) {
 		if((notifiedValue & RX_BIT) != 0) {
 			Frame *frame;
 			while(xQueueReceive(rx_queue, &frame, 0) == pdTRUE) {
-				unstuff_data(reinterpret_cast<const uint8_t *>(frame->buffer), frame->size, reinterpret_cast<uint8_t *>(decoded));
+				unstuff_data(reinterpret_cast<const uint8_t *>(frame->buffer), frame->size, reinterpret_cast<uint8_t *>(decoded_buffer));
 
-				uint8_t cmd = *decoded;
+				uint8_t cmd = *decoded_buffer;
 				// align data, otherwise conversion from double will crash
-				memmove(decoded, decoded + 1, frame->size);
+				memmove(decoded_buffer, decoded_buffer + 1, frame->size);
 
-				processCommand(cmd, decoded);
+				processCommand(cmd, decoded_buffer);
 
 				portDISABLE_INTERRUPTS();
 				rx.give(frame);
