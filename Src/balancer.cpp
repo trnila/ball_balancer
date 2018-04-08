@@ -7,82 +7,29 @@
 #include "cmsis_os.h"
 #include "portmacro.h"
 #include "string.h"
+#include "comm.h"
 
 extern "C" {
 	void controlTask(void const * argument);
 };
-
-void set_pwm(uint32_t channel, int us);
-void writeServos(int x, int y);
-void send(Measurement& measurement);
-
 
 STMTouch touch;
 VelocityTracker tracker(&touch);
 Configuration conf;
 ball_balancer balancer(tracker, conf);
 
-xQueueHandle txqueue;
-Measurement txbuffer;
+void set_pwm(uint32_t channel, int us) {
+	double t = 1.0 / (HAL_RCC_GetHCLKFreq() / (htim3.Init.Prescaler + 1));
+	int pulse = (double) us * (pow(10, -6)) / t;
 
-#define MAX_BUF 32
-#define MAX_CMD_ARGS 5
-char rxbuffer[MAX_BUF];
-int rxpos = 0;
-xQueueHandle rxcommands;
-
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
-	if(rxbuffer[rxpos] == '\n') {
-		rxbuffer[rxpos] = '\0';
-		xQueueSendFromISR(rxcommands, rxbuffer, NULL);
-
-		rxpos = 0;
-	} else {
-		rxpos = (rxpos + 1) % MAX_BUF;
-	}
-
-	int x = HAL_UART_Receive_IT(&huart1, (uint8_t*) rxbuffer + rxpos, 1);
-	configASSERT(x == HAL_OK);
-}
-
-void processCommand(char* cmd, int argc, char** argv) {
-	if(strcmp(cmd, "set_p") == 0 && argc >= 1) {
-		conf.const_p = atof(argv[0]);
-	} else if(strcmp(cmd, "set_d")  == 0 && argc >= 1) {
-		conf.const_d = atof(argv[0]);
-	} else if(strcmp(cmd, "set_i")  == 0 && argc >= 1) {
-		conf.const_i = atof(argv[0]);
-	}
-}
-
-void handleInput() {
-	char buffer[MAX_BUF];
-	while(xQueueReceive(rxcommands, &buffer, 0) == pdTRUE) {
-		char* args[MAX_CMD_ARGS];
-
-		char *tok = strtok(buffer, " ");
-		char *cmd = tok;
-
-		int i = 0;
-		while(tok && i < MAX_CMD_ARGS) {
-			args[i] = tok = strtok(NULL, " ");
-			i++;
-		}
-
-		processCommand(cmd, i - 1, args);
-	}
+	configASSERT(pulse < 0xFFFF);
+	__HAL_TIM_SET_COMPARE(&htim3, channel, pulse);
 }
 
 void controlTask(void const * argument) {
 	// initialize pwm for servos
 	configASSERT(HAL_TIM_PWM_Start_IT(&htim3, TIM_CHANNEL_1) == HAL_OK);
 	configASSERT(HAL_TIM_PWM_Start_IT(&htim3, TIM_CHANNEL_2) == HAL_OK);
-
-	configASSERT(rxcommands = xQueueCreate(5, MAX_BUF));
-	configASSERT(HAL_UART_Receive_IT(&huart1, (uint8_t*) &rxbuffer, 1) == HAL_OK);
-
-	configASSERT(txqueue = xQueueCreate(5, sizeof(Measurement)));
-
 	configASSERT(HAL_ADCEx_Calibration_Start(&hadc1) == HAL_OK);
 
 	TickType_t ticks = xTaskGetTickCount();
@@ -117,32 +64,9 @@ void controlTask(void const * argument) {
 			set_pwm(TIM_CHANNEL_2, measurement.USY);
 		}
 
-		UBaseType_t waiting = uxQueueMessagesWaiting(txqueue);
-		if(waiting == 0) {
-			txbuffer = measurement;
-			configASSERT(HAL_UART_Transmit_DMA(&huart1, (uint8_t *) &txbuffer, sizeof(txbuffer)) == HAL_OK);
-		} else {
-			xQueueSend(txqueue, &measurement, 0);
-		}
-
+		send_command(CMD_MEASUREMENT, (char*) &measurement, sizeof(measurement));
 		HAL_GPIO_WritePin(DEBUG_GPIO_Port, DEBUG_Pin, GPIO_PIN_RESET);
 
-		handleInput();
-
 		vTaskDelayUntil(&ticks, MEASUREMENT_PERIOD_MS);
-	}
-}
-
-void set_pwm(uint32_t channel, int us) {
-	double t = 1.0 / (HAL_RCC_GetHCLKFreq() / (htim3.Init.Prescaler + 1));
-	int pulse = (double) us * (pow(10, -6)) / t;
-
-	configASSERT(pulse < 0xFFFF);
-	__HAL_TIM_SET_COMPARE(&htim3, channel, pulse);
-}
-
-void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
-	if(xQueueReceiveFromISR(txqueue, &txbuffer, nullptr) == pdTRUE) {
-		configASSERT(HAL_UART_Transmit_DMA(&huart1, (uint8_t *) &txbuffer, sizeof(txbuffer)) == HAL_OK);
 	}
 }
