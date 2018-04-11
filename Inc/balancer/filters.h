@@ -45,8 +45,8 @@ public:
 			z = prev + speed;
 		} else {
 			speed = z - prev;
+			prev = z;
 		}
-		prev = z;
 
 		return z;
 	};
