@@ -170,7 +170,9 @@ void uartTask(void const * argument) {
 				current_tx_frame = frame;
 
 				transmitting = 1;
+				portENTER_CRITICAL();
 				configASSERT(HAL_UART_Transmit_DMA(&huart1, (uint8_t *) frame->buffer, frame->size) == HAL_OK);
+				portEXIT_CRITICAL();
 			}
 		}
 
