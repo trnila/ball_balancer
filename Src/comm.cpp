@@ -3,6 +3,7 @@ extern "C" {
 	#include <FreeRTOS.h>
 	#include <queue.h>
 	#include <string.h>
+	#include <cstdarg>
 	#include <usart.h>
 	#include <task.h>
 }
@@ -17,6 +18,7 @@ extern "C" {
 #define RX_BIT    0x02
 
 #define MAX_BUF 128
+#define MAX_ERROR_SIZE 32
 
 extern "C" {
 	void uartTask(void const * argument);
@@ -46,6 +48,18 @@ Frame *current_tx_frame = nullptr;
 char prepare_buffer[MAX_BUF];
 // buffer for decoded message
 char decoded_buffer[MAX_BUF];
+
+char error_data[MAX_ERROR_SIZE];
+
+void send_error(const char* fmt, ...) {
+	va_list args;
+	va_start(args, fmt);
+	char size = vsnprintf(error_data + 1, MAX_ERROR_SIZE - 1, fmt, args);
+	error_data[0] = size;
+	va_end(args);
+
+	send_command(CMD_ERROR_RESPONSE, error_data, size + 1);
+}
 
 void send_command(uint8_t cmd, char *data, int size) {
 	const int HEADER_SIZE = 1;
@@ -108,13 +122,17 @@ extern "C" void uart_init() {
 void processCommand(uint8_t cmd, char* args) {
 	if(cmd == CMD_RESET) {
 		balancer.reset();
-	} else if(cmd == CMD_POS) {
+	} else if(cmd == CMD_SET_TARGET) {
 		int x = *(int*) args;
 		int y = *(int*) (args + sizeof(int));
 
-		taskENTER_CRITICAL();
-		balancer.setTargetPosition(x, y);
-		taskEXIT_CRITICAL();
+		if(x < PLANE_BOUNDARIES[0] || x > PLANE_BOUNDARIES[2] || y < PLANE_BOUNDARIES[1] || y > PLANE_BOUNDARIES[3]) {
+			send_error("target [%d, %d] out of range", x, y);
+		} else {
+			taskENTER_CRITICAL();
+			balancer.setTargetPosition(x, y);
+			taskEXIT_CRITICAL();
+		}
 	} else if(cmd == CMD_PID) {
 		double p = *(double*) args;
 		double i = *(double*) (args + sizeof(double));
@@ -125,14 +143,14 @@ void processCommand(uint8_t cmd, char* args) {
 		conf.const_i = i;
 		conf.const_d = d;
 		taskEXIT_CRITICAL();
-	} else if(cmd == CMD_GETPOS) {
+	} else if(cmd == CMD_GET_TARGET) {
 		int result[2];
 		taskENTER_CRITICAL();
 		result[0] = (int) balancer.getTargetPosition().x;
 		result[1] = (int) balancer.getTargetPosition().y;
 		taskEXIT_CRITICAL();
 
-		send_command(CMD_GETPOS | CMD_RESPONSE, (char*) &result, sizeof(result));
+		send_command(CMD_GET_TARGET | CMD_RESPONSE, (char*) &result, sizeof(result));
 	} else if(cmd == CMD_GETPID) {
 		double r[3];
 		taskENTER_CRITICAL();
@@ -143,7 +161,14 @@ void processCommand(uint8_t cmd, char* args) {
 
 		send_command(CMD_GETPID | CMD_RESPONSE, (char*) &r, sizeof(r));
 	} else if(cmd == CMD_GETDIM) {
-		int result[] = {SIZE_X, SIZE_Y};
+		int result[] = {
+				SIZE_X,
+				SIZE_Y,
+				PLANE_BOUNDARIES[0],
+				PLANE_BOUNDARIES[1],
+				PLANE_BOUNDARIES[2],
+				PLANE_BOUNDARIES[3]
+		};
 		send_command(CMD_GETDIM | CMD_RESPONSE, (char*) &result, sizeof(result));
 	} else {
 		//configASSERT(0);

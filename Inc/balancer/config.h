@@ -11,6 +11,13 @@ const int MEASUREMENT_PERIOD_MS = 20;
 const int SIZE_Y = 230;
 const int SIZE_X = 170;
 
+const int BOUNDARY_X = 10;
+const int BOUNDARY_Y = 10;
+const int PLANE_BOUNDARIES[] = {
+		BOUNDARY_X, BOUNDARY_Y,
+		SIZE_X - 2 * BOUNDARY_X, SIZE_Y - 2 * BOUNDARY_Y
+};
+
 
 //const int RminY = 10600, RmaxY = 44900;
 //const int RminX = 8130, RmaxX = 50700;
