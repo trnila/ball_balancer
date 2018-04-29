@@ -8,11 +8,11 @@ extern "C" {
 	#include <task.h>
 }
 #include "balancer/ball_balancer.h"
-#include "buffer.h"
-#include "comm.h"
+#include "balancer/buffer.h"
+#include "balancer/comm.h"
 #include <climits>
 #include "cmsis_os.h"
-#include "uart_encoder.h"
+#include "balancer/uart_encoder.h"
 
 #define TX_BIT    0x01
 #define RX_BIT    0x02

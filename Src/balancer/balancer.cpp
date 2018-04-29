@@ -3,11 +3,11 @@
 #include "stm32f1xx.h"
 #include "usart.h"
 #include "balancer/ball_balancer.h"
-#include "STMTouch.h"
+#include "balancer/STMTouch.h"
 #include "cmsis_os.h"
 #include "portmacro.h"
 #include "string.h"
-#include "comm.h"
+#include "balancer/comm.h"
 
 extern "C" {
 	void controlTask(void const * argument);

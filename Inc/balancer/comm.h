@@ -1,5 +1,5 @@
 #pragma once
-#include "buffer.h"
+#include "balancer/buffer.h"
 
 const uint8_t CMD_RESPONSE = 128;
 const uint8_t CMD_GETTER = 64;
