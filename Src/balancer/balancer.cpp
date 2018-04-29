@@ -17,7 +17,7 @@ extern "C" {
 STMTouch touch;
 VelocityTracker tracker(&touch);
 Configuration conf;
-ball_balancer balancer(tracker, conf);
+BallBalancer balancer(tracker, conf);
 
 void set_pwm(uint32_t channel, int us) {
 	double t = 1.0 / (HAL_RCC_GetHCLKFreq() / (htim3.Init.Prescaler + 1));

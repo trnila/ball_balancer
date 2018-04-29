@@ -27,7 +27,7 @@ extern "C" {
 }
 
 extern Configuration conf;
-extern ball_balancer balancer;
+extern BallBalancer balancer;
 
 
 struct Frame {
