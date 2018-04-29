@@ -2,7 +2,7 @@ extern "C" {
 	#include <FreeRTOSConfig.h>
 	#include <FreeRTOS.h>
 	#include <queue.h>
-	#include <string.h>
+	#include <cstring>
 	#include <cstdarg>
 	#include <usart.h>
 	#include <task.h>
@@ -14,8 +14,8 @@ extern "C" {
 #include "cmsis_os.h"
 #include "balancer/uart_encoder.h"
 
-#define TX_BIT    0x01
-#define RX_BIT    0x02
+#define TX_BIT    (uint32_t) 0x01
+#define RX_BIT    (uint32_t) 0x02
 
 #define MAX_BUF 128
 #define MAX_ERROR_SIZE 32
@@ -31,8 +31,8 @@ extern BallBalancer balancer;
 
 
 struct Frame {
-	char buffer[MAX_BUF];
-	int size;
+	uint8_t buffer[MAX_BUF];
+	size_t size;
 };
 
 xQueueHandle rx_queue;
@@ -47,7 +47,7 @@ Frame *current_tx_frame = nullptr;
 // temporary buffer used for building frame
 char prepare_buffer[MAX_BUF];
 // buffer for decoded message
-char decoded_buffer[MAX_BUF];
+uint8_t decoded_buffer[MAX_BUF];
 
 char error_data[MAX_ERROR_SIZE];
 
@@ -61,7 +61,7 @@ void send_error(const char* fmt, ...) {
 	sendCommand(CMD_ERROR_RESPONSE, error_data, size + 1);
 }
 
-void sendCommand(uint8_t cmd, char *data, int size) {
+void sendCommand(uint8_t cmd, char *data, size_t size) {
 	const int HEADER_SIZE = 1;
 
 	taskENTER_CRITICAL();
@@ -119,7 +119,7 @@ extern "C" void uart_init() {
 	configASSERT(HAL_UART_Receive_IT(&huart1, (uint8_t*) current_rx_frame->buffer, 1) == HAL_OK);
 }
 
-void processCommand(uint8_t cmd, char* args) {
+void processCommand(uint8_t cmd, const uint8_t *args) {
 	if(cmd == CMD_RESET) {
 		balancer.reset();
 	} else if(cmd == CMD_SET_TARGET) {
@@ -177,7 +177,7 @@ void processCommand(uint8_t cmd, char* args) {
 
 void uartTask(void const * argument) {
 	for(;;) {
-		uint32_t notifiedValue;
+		uint32_t notifiedValue = 0;
 		configASSERT(xTaskNotifyWait( pdFALSE, RX_BIT, &notifiedValue, portMAX_DELAY) == pdPASS);
 
 		if(transmitting == 0 && (notifiedValue & TX_BIT) != 0) {

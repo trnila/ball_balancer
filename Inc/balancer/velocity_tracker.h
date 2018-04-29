@@ -9,7 +9,7 @@
 
 class VelocityTracker {
 public:
-	explicit VelocityTracker(ITouch *touch):
+	explicit VelocityTracker(ITouch *touch) noexcept:
 			touch(touch),
 			xfilter(new ChainFilter(std::vector<IFilter*>{new VFilter(150), new GHFilter(0.1, 0.001), new AvgFilter(2)})),
 			yfilter(new ChainFilter(std::vector<IFilter*>{new VFilter(150), new GHFilter(0.1, 0.001), new AvgFilter(2)}))

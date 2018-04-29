@@ -17,7 +17,11 @@ struct Measurement {
 
 class BallBalancer {
 public:
-	BallBalancer(VelocityTracker &tracker, Configuration &conf): tracker(tracker), conf(conf), target(SIZE_X / 2, SIZE_Y / 2) {
+	BallBalancer(VelocityTracker &tracker, Configuration &conf) noexcept:
+			tracker(tracker),
+			conf(conf),
+			target(SIZE_X / 2, SIZE_Y / 2)
+	{
 		reset();
 	}
 

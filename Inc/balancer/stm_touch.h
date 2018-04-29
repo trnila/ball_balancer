@@ -23,6 +23,6 @@ private:
 	void measureSamples();
 
 	void selectADCChannel(uint32_t channel) const;
-	void pinMode(int pin, int mode);
+	void pinMode(uint32_t pin, uint32_t mode);
 	void digitalWrite(int pin, GPIO_PinState state);
 };

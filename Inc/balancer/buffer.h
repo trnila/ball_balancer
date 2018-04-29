@@ -3,7 +3,7 @@
 template<typename T>
 class BufferPool {
 public:
-	explicit BufferPool(int size): size(size) {
+	explicit BufferPool(int size) noexcept: size(size) {
 		data = new T[size];
 		free = new T*[size];
 

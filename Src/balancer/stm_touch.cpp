@@ -40,7 +40,7 @@ int STMTouch::measureX() {
 	return measureAxis(ADC_CHANNEL_1);
 }
 
-void STMTouch::pinMode(int pin, int mode) {
+void STMTouch::pinMode(uint32_t pin, uint32_t mode) {
 	GPIO_InitTypeDef GPIO_InitStruct;
 	GPIO_InitStruct.Pin = pin;
 	GPIO_InitStruct.Mode = mode;
