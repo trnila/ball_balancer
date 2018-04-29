@@ -3,7 +3,7 @@
 struct Configuration {
 	double const_p, const_d, const_i;
 
-	Configuration() {
+	Configuration() noexcept {
 /*
   		const_p = 0.00001;
 		const_i = 0.00002;

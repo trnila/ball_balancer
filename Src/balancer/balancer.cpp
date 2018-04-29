@@ -1,13 +1,14 @@
 #include <tim.h>
 #include <stm32f1xx_hal_tim.h>
+#include <cstring>
 #include "stm32f1xx.h"
 #include "usart.h"
 #include "balancer/ball_balancer.h"
-#include "STMTouch.h"
+#include "balancer/stm_touch.h"
 #include "cmsis_os.h"
 #include "portmacro.h"
-#include "string.h"
-#include "comm.h"
+#include "balancer/comm.h"
+#include "adc.h"
 
 extern "C" {
 	void controlTask(void const * argument);
@@ -16,10 +17,10 @@ extern "C" {
 STMTouch touch;
 VelocityTracker tracker(&touch);
 Configuration conf;
-ball_balancer balancer(tracker, conf);
+BallBalancer balancer(tracker, conf);
 
 void set_pwm(uint32_t channel, int us) {
-	double t = 1.0 / (HAL_RCC_GetHCLKFreq() / (htim3.Init.Prescaler + 1));
+	double t = 1.0 / ((double) HAL_RCC_GetHCLKFreq() / (htim3.Init.Prescaler + 1));
 	int pulse = (double) us * (pow(10, -6)) / t;
 
 	configASSERT(pulse < 0xFFFF);
@@ -56,7 +57,7 @@ void controlTask(void const * argument) {
 	for(;;);
 	*/
 
-	Measurement measurement;
+	Measurement measurement{};
 	for(;;) {
 		HAL_GPIO_WritePin(DEBUG_GPIO_Port, DEBUG_Pin, GPIO_PIN_SET);
 		if(balancer.update(measurement)) {
@@ -64,7 +65,7 @@ void controlTask(void const * argument) {
 			set_pwm(TIM_CHANNEL_2, measurement.USY);
 		}
 
-		send_command(CMD_MEASUREMENT, (char*) &measurement, sizeof(measurement));
+		sendCommand(CMD_MEASUREMENT, (char *) &measurement, sizeof(measurement));
 		HAL_GPIO_WritePin(DEBUG_GPIO_Port, DEBUG_Pin, GPIO_PIN_RESET);
 
 		vTaskDelayUntil(&ticks, MEASUREMENT_PERIOD_MS);

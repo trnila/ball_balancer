@@ -1,5 +1,5 @@
 #pragma once
-#include "buffer.h"
+#include "balancer/buffer.h"
 
 const uint8_t CMD_RESPONSE = 128;
 const uint8_t CMD_GETTER = 64;
@@ -15,4 +15,4 @@ const uint8_t CMD_GETDIM = CMD_GETTER | (CMD_PID + 1);
 const uint8_t CMD_MEASUREMENT = 0 | CMD_RESPONSE;
 const uint8_t CMD_ERROR_RESPONSE = 255;
 
-void send_command(uint8_t cmd, char* data, int size);
+void sendCommand(uint8_t cmd, char *data, size_t size);

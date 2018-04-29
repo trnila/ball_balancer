@@ -2,20 +2,20 @@ extern "C" {
 	#include <FreeRTOSConfig.h>
 	#include <FreeRTOS.h>
 	#include <queue.h>
-	#include <string.h>
+	#include <cstring>
 	#include <cstdarg>
 	#include <usart.h>
 	#include <task.h>
 }
 #include "balancer/ball_balancer.h"
-#include "buffer.h"
-#include "comm.h"
+#include "balancer/buffer.h"
+#include "balancer/comm.h"
 #include <climits>
 #include "cmsis_os.h"
-#include "uart_encoder.h"
+#include "balancer/uart_encoder.h"
 
-#define TX_BIT    0x01
-#define RX_BIT    0x02
+#define TX_BIT    (uint32_t) 0x01
+#define RX_BIT    (uint32_t) 0x02
 
 #define MAX_BUF 128
 #define MAX_ERROR_SIZE 32
@@ -27,18 +27,18 @@ extern "C" {
 }
 
 extern Configuration conf;
-extern ball_balancer balancer;
+extern BallBalancer balancer;
 
 
 struct Frame {
-	char buffer[MAX_BUF];
-	int size;
+	uint8_t buffer[MAX_BUF];
+	size_t size;
 };
 
 xQueueHandle rx_queue;
 xQueueHandle tx_queue;
 
-buffer_pool<Frame> tx(8), rx(8);
+BufferPool<Frame> tx(8), rx(8);
 
 volatile int transmitting = 0;
 Frame *current_rx_frame = nullptr;
@@ -47,7 +47,7 @@ Frame *current_tx_frame = nullptr;
 // temporary buffer used for building frame
 char prepare_buffer[MAX_BUF];
 // buffer for decoded message
-char decoded_buffer[MAX_BUF];
+uint8_t decoded_buffer[MAX_BUF];
 
 char error_data[MAX_ERROR_SIZE];
 
@@ -58,10 +58,10 @@ void send_error(const char* fmt, ...) {
 	error_data[0] = size;
 	va_end(args);
 
-	send_command(CMD_ERROR_RESPONSE, error_data, size + 1);
+	sendCommand(CMD_ERROR_RESPONSE, error_data, size + 1);
 }
 
-void send_command(uint8_t cmd, char *data, int size) {
+void sendCommand(uint8_t cmd, char *data, size_t size) {
 	const int HEADER_SIZE = 1;
 
 	taskENTER_CRITICAL();
@@ -75,7 +75,7 @@ void send_command(uint8_t cmd, char *data, int size) {
 	memcpy(prepare_buffer + 1, data, size);
 
 	// encode frame
-	buffer->size = stuff_data((uint8_t*) prepare_buffer, size + HEADER_SIZE, (uint8_t*) buffer->buffer);
+	buffer->size = stuffData((uint8_t *) prepare_buffer, size + HEADER_SIZE, (uint8_t *) buffer->buffer);
 
 	// add terminator
 	buffer->buffer[buffer->size] = '\0';
@@ -119,7 +119,7 @@ extern "C" void uart_init() {
 	configASSERT(HAL_UART_Receive_IT(&huart1, (uint8_t*) current_rx_frame->buffer, 1) == HAL_OK);
 }
 
-void processCommand(uint8_t cmd, char* args) {
+void processCommand(uint8_t cmd, const uint8_t *args) {
 	if(cmd == CMD_RESET) {
 		balancer.reset();
 	} else if(cmd == CMD_SET_TARGET) {
@@ -150,7 +150,7 @@ void processCommand(uint8_t cmd, char* args) {
 		result[1] = (int) balancer.getTargetPosition().y;
 		taskEXIT_CRITICAL();
 
-		send_command(CMD_GET_TARGET | CMD_RESPONSE, (char*) &result, sizeof(result));
+		sendCommand(CMD_GET_TARGET | CMD_RESPONSE, (char *) &result, sizeof(result));
 	} else if(cmd == CMD_GETPID) {
 		double r[3];
 		taskENTER_CRITICAL();
@@ -159,7 +159,7 @@ void processCommand(uint8_t cmd, char* args) {
 		r[2] = conf.const_d;
 		taskEXIT_CRITICAL();
 
-		send_command(CMD_GETPID | CMD_RESPONSE, (char*) &r, sizeof(r));
+		sendCommand(CMD_GETPID | CMD_RESPONSE, (char *) &r, sizeof(r));
 	} else if(cmd == CMD_GETDIM) {
 		int result[] = {
 				SIZE_X,
@@ -169,7 +169,7 @@ void processCommand(uint8_t cmd, char* args) {
 				PLANE_BOUNDARIES[2],
 				PLANE_BOUNDARIES[3]
 		};
-		send_command(CMD_GETDIM | CMD_RESPONSE, (char*) &result, sizeof(result));
+		sendCommand(CMD_GETDIM | CMD_RESPONSE, (char *) &result, sizeof(result));
 	} else {
 		//configASSERT(0);
 	}
@@ -177,7 +177,7 @@ void processCommand(uint8_t cmd, char* args) {
 
 void uartTask(void const * argument) {
 	for(;;) {
-		uint32_t notifiedValue;
+		uint32_t notifiedValue = 0;
 		configASSERT(xTaskNotifyWait( pdFALSE, RX_BIT, &notifiedValue, portMAX_DELAY) == pdPASS);
 
 		if(transmitting == 0 && (notifiedValue & TX_BIT) != 0) {
@@ -204,7 +204,8 @@ void uartTask(void const * argument) {
 		if((notifiedValue & RX_BIT) != 0) {
 			Frame *frame;
 			while(xQueueReceive(rx_queue, &frame, 0) == pdTRUE) {
-				unstuff_data(reinterpret_cast<const uint8_t *>(frame->buffer), frame->size, reinterpret_cast<uint8_t *>(decoded_buffer));
+				unstuffData(reinterpret_cast<const uint8_t *>(frame->buffer), frame->size,
+				            reinterpret_cast<uint8_t *>(decoded_buffer));
 
 				uint8_t cmd = *decoded_buffer;
 				// align data, otherwise conversion from double will crash

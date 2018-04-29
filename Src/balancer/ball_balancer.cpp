@@ -1,7 +1,7 @@
 #include "balancer/ball_balancer.h"
 #include "balancer/utils.h"
 
-bool ball_balancer::update(Measurement &meas) {
+bool BallBalancer::update(Measurement &meas) {
 	bool touchDetected = tracker.update();
 
 	Vectorf speed = tracker.getSpeed();

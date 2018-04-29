@@ -15,9 +15,13 @@ struct Measurement {
 	float rawx, rawy;
 };
 
-class ball_balancer {
+class BallBalancer {
 public:
-	ball_balancer(VelocityTracker &tracker, Configuration &conf): tracker(tracker), conf(conf), target(SIZE_X / 2, SIZE_Y / 2) {
+	BallBalancer(VelocityTracker &tracker, Configuration &conf) noexcept:
+			tracker(tracker),
+			conf(conf),
+			target(SIZE_X / 2, SIZE_Y / 2)
+	{
 		reset();
 	}
 
