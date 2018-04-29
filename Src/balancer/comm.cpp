@@ -38,7 +38,7 @@ struct Frame {
 xQueueHandle rx_queue;
 xQueueHandle tx_queue;
 
-buffer_pool<Frame> tx(8), rx(8);
+BufferPool<Frame> tx(8), rx(8);
 
 volatile int transmitting = 0;
 Frame *current_rx_frame = nullptr;
@@ -58,10 +58,10 @@ void send_error(const char* fmt, ...) {
 	error_data[0] = size;
 	va_end(args);
 
-	send_command(CMD_ERROR_RESPONSE, error_data, size + 1);
+	sendCommand(CMD_ERROR_RESPONSE, error_data, size + 1);
 }
 
-void send_command(uint8_t cmd, char *data, int size) {
+void sendCommand(uint8_t cmd, char *data, int size) {
 	const int HEADER_SIZE = 1;
 
 	taskENTER_CRITICAL();
@@ -75,7 +75,7 @@ void send_command(uint8_t cmd, char *data, int size) {
 	memcpy(prepare_buffer + 1, data, size);
 
 	// encode frame
-	buffer->size = stuff_data((uint8_t*) prepare_buffer, size + HEADER_SIZE, (uint8_t*) buffer->buffer);
+	buffer->size = stuffData((uint8_t *) prepare_buffer, size + HEADER_SIZE, (uint8_t *) buffer->buffer);
 
 	// add terminator
 	buffer->buffer[buffer->size] = '\0';
@@ -150,7 +150,7 @@ void processCommand(uint8_t cmd, char* args) {
 		result[1] = (int) balancer.getTargetPosition().y;
 		taskEXIT_CRITICAL();
 
-		send_command(CMD_GET_TARGET | CMD_RESPONSE, (char*) &result, sizeof(result));
+		sendCommand(CMD_GET_TARGET | CMD_RESPONSE, (char *) &result, sizeof(result));
 	} else if(cmd == CMD_GETPID) {
 		double r[3];
 		taskENTER_CRITICAL();
@@ -159,7 +159,7 @@ void processCommand(uint8_t cmd, char* args) {
 		r[2] = conf.const_d;
 		taskEXIT_CRITICAL();
 
-		send_command(CMD_GETPID | CMD_RESPONSE, (char*) &r, sizeof(r));
+		sendCommand(CMD_GETPID | CMD_RESPONSE, (char *) &r, sizeof(r));
 	} else if(cmd == CMD_GETDIM) {
 		int result[] = {
 				SIZE_X,
@@ -169,7 +169,7 @@ void processCommand(uint8_t cmd, char* args) {
 				PLANE_BOUNDARIES[2],
 				PLANE_BOUNDARIES[3]
 		};
-		send_command(CMD_GETDIM | CMD_RESPONSE, (char*) &result, sizeof(result));
+		sendCommand(CMD_GETDIM | CMD_RESPONSE, (char *) &result, sizeof(result));
 	} else {
 		//configASSERT(0);
 	}
@@ -204,7 +204,8 @@ void uartTask(void const * argument) {
 		if((notifiedValue & RX_BIT) != 0) {
 			Frame *frame;
 			while(xQueueReceive(rx_queue, &frame, 0) == pdTRUE) {
-				unstuff_data(reinterpret_cast<const uint8_t *>(frame->buffer), frame->size, reinterpret_cast<uint8_t *>(decoded_buffer));
+				unstuffData(reinterpret_cast<const uint8_t *>(frame->buffer), frame->size,
+				            reinterpret_cast<uint8_t *>(decoded_buffer));
 
 				uint8_t cmd = *decoded_buffer;
 				// align data, otherwise conversion from double will crash

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cmsis_os.h>
-#include "balancer/itouch.h"
+#include "balancer/touch.h"
 
 extern "C" {
 	#include "stm32f1xx.h"
@@ -10,7 +10,7 @@ extern "C" {
 
 #define SAMPLES_NUM 32
 
-class STMTouch: public itouch {
+class STMTouch: public ITouch {
 public:
 	virtual	void read(int &X, int &Y) {
 		ADC_ChannelConfTypeDef sConfig;

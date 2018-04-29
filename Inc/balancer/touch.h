@@ -1,6 +1,6 @@
 #pragma once
 
-class itouch {
+class ITouch {
 public:
 	virtual void read(int &X, int &Y) = 0;
 };

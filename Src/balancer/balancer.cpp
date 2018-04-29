@@ -1,12 +1,12 @@
 #include <tim.h>
 #include <stm32f1xx_hal_tim.h>
+#include <string.h>
 #include "stm32f1xx.h"
 #include "usart.h"
 #include "balancer/ball_balancer.h"
-#include "balancer/STMTouch.h"
+#include "balancer/stm_touch.h"
 #include "cmsis_os.h"
 #include "portmacro.h"
-#include "string.h"
 #include "balancer/comm.h"
 
 extern "C" {
@@ -64,7 +64,7 @@ void controlTask(void const * argument) {
 			set_pwm(TIM_CHANNEL_2, measurement.USY);
 		}
 
-		send_command(CMD_MEASUREMENT, (char*) &measurement, sizeof(measurement));
+		sendCommand(CMD_MEASUREMENT, (char *) &measurement, sizeof(measurement));
 		HAL_GPIO_WritePin(DEBUG_GPIO_Port, DEBUG_Pin, GPIO_PIN_RESET);
 
 		vTaskDelayUntil(&ticks, MEASUREMENT_PERIOD_MS);

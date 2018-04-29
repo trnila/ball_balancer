@@ -1,9 +1,9 @@
 #pragma once
 
 template<typename T>
-class buffer_pool {
+class BufferPool {
 public:
-	buffer_pool(int size): size(size) {
+	explicit BufferPool(int size): size(size) {
 		data = new T[size];
 		free = new T*[size];
 
@@ -12,7 +12,7 @@ public:
 		}
 	}
 
-	~buffer_pool() {
+	~BufferPool() {
 		delete[] data;
 	}
 

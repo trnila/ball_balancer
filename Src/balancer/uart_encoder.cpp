@@ -4,7 +4,7 @@
 #define StartBlock()	(code_ptr = dst++, code = 1)
 #define FinishBlock()	(*code_ptr = code)
 
-size_t stuff_data(const uint8_t *ptr, size_t length, uint8_t *dst)
+size_t stuffData(const uint8_t *ptr, size_t length, uint8_t *dst)
 {
 	const uint8_t *start = dst, *end = ptr + length;
 	uint8_t code, *code_ptr; /* Where to insert the leading count */
@@ -26,7 +26,7 @@ size_t stuff_data(const uint8_t *ptr, size_t length, uint8_t *dst)
 	return dst - start;
 }
 
-size_t unstuff_data(const uint8_t *ptr, size_t length, uint8_t *dst) {
+size_t unstuffData(const uint8_t *ptr, size_t length, uint8_t *dst) {
 	const uint8_t *start = dst, *end = ptr + length;
 	uint8_t code = 0xFF, copy = 0;
 
