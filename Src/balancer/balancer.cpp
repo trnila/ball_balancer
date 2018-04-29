@@ -8,6 +8,7 @@
 #include "cmsis_os.h"
 #include "portmacro.h"
 #include "balancer/comm.h"
+#include "adc.h"
 
 extern "C" {
 	void controlTask(void const * argument);
