@@ -1,5 +1,5 @@
 // https://en.wikipedia.org/wiki/Consistent_Overhead_Byte_Stuffing
-#include "balancer/uart_encoder.h"
+#include "balancer/uart_codec.h"
 
 #define StartBlock()	(code_ptr = dst++, code = 1)
 #define FinishBlock()	(*code_ptr = code)

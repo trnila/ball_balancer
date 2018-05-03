@@ -12,7 +12,7 @@ extern "C" {
 #include "balancer/comm.h"
 #include <climits>
 #include "cmsis_os.h"
-#include "balancer/uart_encoder.h"
+#include "balancer/uart_codec.h"
 
 #define TX_BIT    (uint32_t) 0x01
 #define RX_BIT    (uint32_t) 0x02
