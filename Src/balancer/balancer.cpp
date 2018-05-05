@@ -60,7 +60,7 @@ void controlTask(void const * argument) {
 	Measurement measurement{};
 	for(;;) {
 		HAL_GPIO_WritePin(DEBUG_GPIO_Port, DEBUG_Pin, GPIO_PIN_SET);
-		if(balancer.update(measurement)) {
+		if(balancer.update(measurement) && !conf.disableServos) {
 			set_pwm(TIM_CHANNEL_1, measurement.USX);
 			set_pwm(TIM_CHANNEL_2, measurement.USY);
 		}

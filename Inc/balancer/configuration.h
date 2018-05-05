@@ -2,6 +2,7 @@
 
 struct Configuration {
 	double const_p, const_d, const_i;
+	bool disableServos = false;
 
 	Configuration() noexcept {
 /*

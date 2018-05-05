@@ -7,6 +7,7 @@ const uint8_t CMD_GETTER = 64;
 const uint8_t CMD_RESET = 0;
 const uint8_t CMD_SET_TARGET = 1;
 const uint8_t CMD_PID = 2;
+const uint8_t CMD_DISABLE_SERVOS = 3;
 
 const uint8_t CMD_GET_TARGET = CMD_GETTER | CMD_SET_TARGET;
 const uint8_t CMD_GETPID = CMD_GETTER | CMD_PID;

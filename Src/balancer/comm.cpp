@@ -170,6 +170,8 @@ void processCommand(uint8_t cmd, const uint8_t *args) {
 				PLANE_BOUNDARIES[3]
 		};
 		sendCommand(CMD_GETDIM | CMD_RESPONSE, (char *) &result, sizeof(result));
+	} else if(cmd == CMD_DISABLE_SERVOS) {
+		conf.disableServos = *args;
 	} else {
 		//configASSERT(0);
 	}
