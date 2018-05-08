@@ -4,15 +4,15 @@
 #include "configuration.h"
 
 struct Measurement {
-	float cx, cy;
-	float vx, vy;
-	float posx, posy;
-	float rvx, rvy;
-	float rax, ray;
-	float nx, ny;
-	float RX, RY;
-	float USX, USY;
-	float rawx, rawy;
+	float cx, cy;     // normal change
+	float vx, vy;     // current velocity (deprecated)
+	float posx, posy; // current positon
+	float rvx, rvy;   // current velocity
+	float rax, ray;   // current acceleration
+	float nx, ny;     // current normal
+	float RX, RY;     // filtered resistance
+	float USX, USY;   // servo usec
+	float rawx, rawy; // measured position
 };
 
 class BallBalancer {

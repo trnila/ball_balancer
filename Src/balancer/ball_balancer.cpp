@@ -24,7 +24,7 @@ bool BallBalancer::update(Measurement &meas) {
 	int USY = CENTER_Y_US + angleY / 0.5f * 600;
 
 	meas.cx = change.x; meas.cy = change.y;
-	meas.vx = speed.x; meas.vy = speed.y;
+	meas.vx = speed.x; meas.vy = speed.y; // deprecated
 	meas.posx = (float) tracker.getPos().x; meas.posy = (float) tracker.getPos().y;
 	meas.rvx = tracker.getSpeed().x; meas.rvy = tracker.getSpeed().y;
 	meas.rax = tracker.getAcceleration().x; meas.ray = tracker.getAcceleration().y;
