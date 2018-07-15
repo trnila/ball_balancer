@@ -9,6 +9,7 @@
 #include "portmacro.h"
 #include "balancer/comm.h"
 #include "adc.h"
+#include "balancer/benchmark.h"
 
 extern "C" void controlTask(void const * argument);
 
@@ -56,7 +57,10 @@ void controlTask(void const * argument) {
 	*/
 
 	Measurement measurement{};
+	benchmark_init();
 	for(;;) {
+		benchmark_start(0);
+
 		HAL_GPIO_WritePin(DEBUG_GPIO_Port, DEBUG_Pin, GPIO_PIN_SET);
 		if(balancer.update(measurement) && !conf.disableServos) {
 			set_pwm(TIM_CHANNEL_1, measurement.USX);
@@ -65,6 +69,7 @@ void controlTask(void const * argument) {
 
 		sendCommand(CMD_MEASUREMENT, (char *) &measurement, sizeof(measurement));
 		HAL_GPIO_WritePin(DEBUG_GPIO_Port, DEBUG_Pin, GPIO_PIN_RESET);
+		benchmark_stop(0, "measure & control cycle");
 
 		vTaskDelayUntil(&ticks, MEASUREMENT_PERIOD_MS);
 	}
