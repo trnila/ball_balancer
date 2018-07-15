@@ -10,9 +10,7 @@
 #include "balancer/comm.h"
 #include "adc.h"
 
-extern "C" {
-	void controlTask(void const * argument);
-};
+extern "C" void controlTask(void const * argument);
 
 STMTouch touch;
 VelocityTracker tracker(&touch);
