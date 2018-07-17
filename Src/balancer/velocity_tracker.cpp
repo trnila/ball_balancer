@@ -2,10 +2,7 @@
 #include "balancer/config.h"
 #include "balancer/velocity_tracker.h"
 
-bool VelocityTracker::update() {
-	int RX, RY;
-	touch->read(RX, RY);
-
+bool VelocityTracker::update(int RX, int RY) {
 	rawResistance.x = RX;
 	rawResistance.y = RY;
 

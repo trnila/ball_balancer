@@ -9,13 +9,12 @@
 
 class VelocityTracker {
 public:
-	explicit VelocityTracker(ITouch *touch) noexcept:
-			touch(touch),
+	explicit VelocityTracker() noexcept:
 			xfilter(new ChainFilter(std::vector<IFilter*>{new HighFilter2(), new GHFilter(0.1, 0.005)})),
 			yfilter(new ChainFilter(std::vector<IFilter*>{new HighFilter2(), new GHFilter(0.1, 0.005)}))
 	{}
 
-	bool update();
+	bool update(int X, int Y);
 
 	const Vector<int>& getResistance() const {
 		return curResistance;

@@ -17,8 +17,8 @@ struct Measurement {
 
 class BallBalancer {
 public:
-	BallBalancer(VelocityTracker &tracker, Configuration &conf) noexcept:
-			tracker(tracker),
+	BallBalancer(ITouch *touch, Configuration &conf) noexcept:
+			touch(touch),
 			conf(conf),
 			target(SIZE_X / 2, SIZE_Y / 2)
 	{
@@ -40,7 +40,8 @@ public:
 	}
 
 private:
-	VelocityTracker &tracker;
+	ITouch *touch;
+	VelocityTracker tracker;
 	Configuration &conf;
 
 	Vector3<double> planeNormal;
