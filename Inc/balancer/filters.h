@@ -11,7 +11,7 @@ public:
 	GHFilter(float g, float h): x_est(0), dx(0), h(h), g(g) {}
 
 	virtual int process(int z) {
-		float dt = 1;
+		float dt = 0.02;
 
 		float x_pred = x_est + (dx * dt);
 
@@ -122,4 +122,22 @@ public:
 
 private:
 	std::vector<IFilter*> filters;
+};
+
+class HighFilter2: public IFilter {
+public:
+	HighFilter2() : prev(0), tr(0) {}
+
+	virtual int process(int z) {
+		if (z < 170 || abs(z - prev) > 180 && tr < 10) {
+			tr++;
+			return prev;
+		}
+
+		prev = z;
+		return z;
+	}
+
+private:
+	int prev, tr;
 };
