@@ -57,7 +57,6 @@
 
 /* Variables -----------------------------------------------------------------*/
 osThreadId controlHandle;
-osThreadId heartbeatHandle;
 osThreadId uartHandle;
 
 /* USER CODE BEGIN Variables */
@@ -65,7 +64,6 @@ osThreadId uartHandle;
 
 /* Function prototypes -------------------------------------------------------*/
 void controlTask(void const * argument);
-void heartbeatTask(void const * argument);
 extern void uartTask(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -101,10 +99,6 @@ void MX_FREERTOS_Init(void) {
   osThreadDef(control, controlTask, osPriorityRealtime, 0, 512);
   controlHandle = osThreadCreate(osThread(control), NULL);
 
-  /* definition and creation of heartbeat */
-  osThreadDef(heartbeat, heartbeatTask, osPriorityIdle, 0, 128);
-  heartbeatHandle = osThreadCreate(osThread(heartbeat), NULL);
-
   /* definition and creation of uart */
   osThreadDef(uart, uartTask, osPriorityIdle, 0, 256);
   uartHandle = osThreadCreate(osThread(uart), NULL);
@@ -129,18 +123,6 @@ __weak void controlTask(void const * argument)
     osDelay(1);
   }
   /* USER CODE END controlTask */
-}
-
-/* heartbeatTask function */
-void heartbeatTask(void const * argument)
-{
-  /* USER CODE BEGIN heartbeatTask */
-  for(;;) {
-//    HAL_GPIO_TogglePin(HEARTBEAT_GPIO_Port, HEARTBEAT_Pin);
-//    osDelay(1000);
-//	  osDelay(1);
-  }
-  /* USER CODE END heartbeatTask */
 }
 
 /* USER CODE BEGIN Application */
