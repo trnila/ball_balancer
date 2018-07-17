@@ -33,29 +33,6 @@ void controlTask(void const * argument) {
 	configASSERT(HAL_ADCEx_Calibration_Start(&hadc1) == HAL_OK);
 
 	TickType_t ticks = xTaskGetTickCount();
-
-
-	/*
-	const int STEPS = 25;
-	for(;;) {
-		for(int i = 0; i <= STEPS; i++) {
-			set_pwm(TIM_CHANNEL_1, CENTER_X_US + (sin((float) i / STEPS) * 2 - 1) * 500);
-			set_pwm(TIM_CHANNEL_2, CENTER_Y_US + (sin((float) i / STEPS) * 2 - 1) * 500);
-			osDelay(20);
-		}
-
-		for(int i = 0; i <= STEPS; i++) {
-			set_pwm(TIM_CHANNEL_2, CENTER_X_US + (sin((float) (STEPS - i) / STEPS) * 2 - 1) * 500);
-			set_pwm(TIM_CHANNEL_1, CENTER_Y_US + (sin((float) (STEPS - i) / STEPS) * 2 - 1) * 500);
-			osDelay(20);
-		}
-	}
-
-	set_pwm(TIM_CHANNEL_1, 1500);
-	set_pwm(TIM_CHANNEL_2, 1500);
-	for(;;);
-	*/
-
 	Measurement measurement{};
 	benchmark_init();
 	for(;;) {
