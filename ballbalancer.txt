@@ -1,0 +1,61 @@
+Configuration	ballbalancer
+STM32CubeMX 	4.26.0
+Date	07/22/2018
+MCU	STM32F103C8Tx
+
+
+
+PERIPHERALS	MODES	FUNCTIONS	PINS
+ADC1	IN0	ADC1_IN0	PA0-WKUP
+ADC1	IN1	ADC1_IN1	PA1
+SYS	Serial Wire	SYS_JTCK-SWCLK	PA14
+SYS	Serial Wire	SYS_JTMS-SWDIO	PA13
+SYS	SysTick	SYS_VS_Systick	VP_SYS_VS_Systick
+TIM2	Internal Clock	TIM2_VS_ClockSourceINT	VP_TIM2_VS_ClockSourceINT
+TIM3	PWM Generation CH1	TIM3_CH1	PB4
+TIM3	PWM Generation CH2	TIM3_CH2	PB5
+USART1	Asynchronous	USART1_RX	PA10
+USART1	Asynchronous	USART1_TX	PA9
+
+
+
+Pin Nb	PINs	FUNCTIONs	LABELs
+10	PA0-WKUP	ADC1_IN0	TOUCH_YP
+11	PA1	ADC1_IN1	TOUCH_XP
+12	PA2	GPIO_Input	TOUCH_YM
+13	PA3	GPIO_Input	TOUCH_XM
+18	PB0	GPIO_Output	DEBUG
+19	PB1	GPIO_Output	HEARTBEAT
+30	PA9	USART1_TX	
+31	PA10	USART1_RX	
+34	PA13	SYS_JTMS-SWDIO	
+37	PA14	SYS_JTCK-SWCLK	
+40	PB4	TIM3_CH1	SERVO_X
+41	PB5	TIM3_CH2	SERVO_Y
+
+
+
+SOFTWARE PROJECT
+
+Project Settings : 
+Project Name : ballbalancer
+Project Folder : /home/daniel/projects/balancer/ballbalancer
+Toolchain / IDE : SW4STM32
+Firmware Package Name and Version : STM32Cube FW_F1 V1.6.1
+
+
+Code Generation Settings : 
+STM32Cube Firmware Library Package : Copy only the necessary library files
+Generate peripheral initialization as a pair of '.c/.h' files per peripheral : Yes
+Backup previously generated files when re-generating : No
+Delete previously generated files when not re-generated : Yes
+Set all free pins as analog (to optimize the power consumption) : No
+
+
+Toolchains Settings : 
+Compiler Optimizations : 
+
+
+
+
+
