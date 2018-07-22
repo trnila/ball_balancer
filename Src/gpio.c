@@ -80,7 +80,7 @@ void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOB, DEBUG_Pin|HEARTBEAT_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : PAPin PAPin */
-  GPIO_InitStruct.Pin = TOUCH_YP_Pin|TOUCH_XP_Pin;
+  GPIO_InitStruct.Pin = TOUCH_YM_Pin|TOUCH_XM_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);

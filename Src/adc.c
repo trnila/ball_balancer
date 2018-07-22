@@ -105,7 +105,7 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
     PA0-WKUP     ------> ADC1_IN0
     PA1     ------> ADC1_IN1 
     */
-    GPIO_InitStruct.Pin = TOUCH_YM_Pin|TOUCH_XM_Pin;
+    GPIO_InitStruct.Pin = TOUCH_YP_Pin|TOUCH_XP_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
@@ -130,7 +130,7 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
     PA0-WKUP     ------> ADC1_IN0
     PA1     ------> ADC1_IN1 
     */
-    HAL_GPIO_DeInit(GPIOA, TOUCH_YM_Pin|TOUCH_XM_Pin);
+    HAL_GPIO_DeInit(GPIOA, TOUCH_YP_Pin|TOUCH_XP_Pin);
 
   /* USER CODE BEGIN ADC1_MspDeInit 1 */
 

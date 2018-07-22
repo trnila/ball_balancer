@@ -59,14 +59,14 @@
 
 /* Private define ------------------------------------------------------------*/
 
-#define TOUCH_YM_Pin GPIO_PIN_0
-#define TOUCH_YM_GPIO_Port GPIOA
-#define TOUCH_XM_Pin GPIO_PIN_1
-#define TOUCH_XM_GPIO_Port GPIOA
-#define TOUCH_YP_Pin GPIO_PIN_2
+#define TOUCH_YP_Pin GPIO_PIN_0
 #define TOUCH_YP_GPIO_Port GPIOA
-#define TOUCH_XP_Pin GPIO_PIN_3
+#define TOUCH_XP_Pin GPIO_PIN_1
 #define TOUCH_XP_GPIO_Port GPIOA
+#define TOUCH_YM_Pin GPIO_PIN_2
+#define TOUCH_YM_GPIO_Port GPIOA
+#define TOUCH_XM_Pin GPIO_PIN_3
+#define TOUCH_XM_GPIO_Port GPIOA
 #define DEBUG_Pin GPIO_PIN_0
 #define DEBUG_GPIO_Port GPIOB
 #define HEARTBEAT_Pin GPIO_PIN_1
