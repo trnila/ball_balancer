@@ -1,3 +1,4 @@
+#if 0
 extern "C" {
 	#include <FreeRTOSConfig.h>
 	#include <FreeRTOS.h>
@@ -222,3 +223,4 @@ void uartTask(void const * argument) {
 		}
 	}
 }
+#endif

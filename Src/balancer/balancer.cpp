@@ -1,10 +1,10 @@
+#include <math.h>
 #include <tim.h>
 #include <stm32f1xx_hal_tim.h>
 #include <cstring>
 #include "stm32f1xx.h"
 #include "usart.h"
 #include "balancer/ball_balancer.h"
-#include "balancer/stm_touch.h"
 #include "cmsis_os.h"
 #include "portmacro.h"
 #include "balancer/comm.h"
@@ -12,12 +12,13 @@
 #include "balancer/benchmark.h"
 #include "measure.h"
 #include "balancer/utils.h"
+#include "balancer/vector2.h"
+#include "balancer/vector3.h"
+
 
 extern "C" void controlTask(void const * argument);
 
-STMTouch touch;
 Configuration conf;
-BallBalancer balancer(&touch, conf);
 
 void set_pwm(uint32_t channel, int us) {
 	double t = 1.0 / ((double) HAL_RCC_GetHCLKFreq() / (htim3.Init.Prescaler + 1));
