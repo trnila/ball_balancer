@@ -22,5 +22,5 @@ const int PLANE_BOUNDARIES[] = {
 //const int RminY = 10600, RmaxY = 44900;
 //const int RminX = 8130, RmaxX = 50700;
 
-const int RminX = 366, RmaxX = 3726;
-const int RminY = 378, RmaxY = 3650;
+const int RminX = 604, RmaxX = 3603;
+const int RminY = 323, RmaxY = 3700;
