@@ -11,10 +11,6 @@ bool VelocityTracker::update(int RX, int RY) {
 		return false;
 	}
 
-	RX = xfilter->process(RX);
-	RY = yfilter->process(RY);
-
-
 	// store resistance just for debugging purposes
 	curResistance.x = RX;
 	curResistance.y = RY;

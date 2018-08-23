@@ -9,10 +9,7 @@
 
 class VelocityTracker {
 public:
-	explicit VelocityTracker() noexcept:
-			xfilter(new ChainFilter(std::vector<IFilter*>{new HighFilter2(), new AvgFilter(5)})),
-			yfilter(new ChainFilter(std::vector<IFilter*>{new HighFilter2(), new AvgFilter(5)}))
-	{}
+	explicit VelocityTracker() noexcept {}
 
 	bool update(int X, int Y);
 
@@ -42,7 +39,4 @@ private:
 	Vector<double> prevPos, curPos;
 	Vector<double> prevSpeed, curSpeed;
 	Vector<double> acceleration;
-
-	IFilter *xfilter;
-	IFilter *yfilter;
 };
