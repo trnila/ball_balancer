@@ -1,6 +1,6 @@
 #include <cstring>
 
-#define SEMIHOSTING_ENABLE
+//#define SEMIHOSTING_ENABLE
 
 #ifdef SEMIHOSTING_ENABLE
 

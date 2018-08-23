@@ -10,6 +10,7 @@
 #include "balancer/comm.h"
 #include "adc.h"
 #include "balancer/benchmark.h"
+#include "measure.h"
 
 extern "C" void controlTask(void const * argument);
 
@@ -31,20 +32,24 @@ void controlTask(void const * argument) {
 	configASSERT(HAL_TIM_PWM_Start_IT(&htim3, TIM_CHANNEL_2) == HAL_OK);
 	configASSERT(HAL_ADCEx_Calibration_Start(&hadc1) == HAL_OK);
 
+	configASSERT(xTaskCreate(measureTask, "measure", 512, NULL, tskIDLE_PRIORITY, NULL) == pdTRUE);
+
 	TickType_t ticks = xTaskGetTickCount();
 	Measurement measurement{};
 	benchmark_init();
 	for(;;) {
 		benchmark_start(0);
 
-		HAL_GPIO_WritePin(DEBUG_GPIO_Port, DEBUG_Pin, GPIO_PIN_SET);
 		if(balancer.update(measurement) && !conf.disableServos) {
 			set_pwm(TIM_CHANNEL_1, measurement.USX);
 			set_pwm(TIM_CHANNEL_2, measurement.USY);
 		}
 
-		sendCommand(CMD_MEASUREMENT, (char *) &measurement, sizeof(measurement));
-		HAL_GPIO_WritePin(DEBUG_GPIO_Port, DEBUG_Pin, GPIO_PIN_RESET);
+		char buffer[40];
+		snprintf(buffer, sizeof(buffer), "%d,%d\r\n", (int) measurement.USX, (int) measurement.USY);
+		HAL_UART_Transmit(&huart1, (uint8_t *) buffer, strlen(buffer), HAL_MAX_DELAY);
+
+		//sendCommand(CMD_MEASUREMENT, (char *) &measurement, sizeof(measurement));
 		benchmark_stop(0, "measure & control cycle");
 
 		vTaskDelayUntil(&ticks, MEASUREMENT_PERIOD_MS);

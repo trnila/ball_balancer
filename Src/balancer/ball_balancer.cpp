@@ -1,9 +1,17 @@
+#include <stdint.h>
+#include <FreeRTOS.h>
 #include "balancer/ball_balancer.h"
 #include "balancer/utils.h"
+#include "portmacro.h"
+#include "measure.h"
 
 bool BallBalancer::update(Measurement &meas) {
 	int RX, RY;
-	touch->read(RX, RY);
+	portENTER_CRITICAL();
+	RX = X;
+	RY = Y;
+	portEXIT_CRITICAL();
+	//touch->read(RX, RY);
 	bool touchDetected = tracker.update(RX, RY);
 
 	Vectorf speed = tracker.getSpeed();

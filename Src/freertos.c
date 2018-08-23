@@ -100,8 +100,8 @@ void MX_FREERTOS_Init(void) {
   controlHandle = osThreadCreate(osThread(control), NULL);
 
   /* definition and creation of uart */
-  osThreadDef(uart, uartTask, osPriorityIdle, 0, 256);
-  uartHandle = osThreadCreate(osThread(uart), NULL);
+  //osThreadDef(uart, uartTask, osPriorityIdle, 0, 256);
+ // uartHandle = osThreadCreate(osThread(uart), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
