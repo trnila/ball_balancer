@@ -71,8 +71,8 @@ void calc(Measurement &measurement) {
 	planeNormal.y = cap(planeNormal.y - change.y);
 	planeNormal = normalize(planeNormal);
 
-	double zx = planeNormal.x * MX / planeNormal.z;
-	double zy = planeNormal.y * MY / planeNormal.z;
+	double zx = -planeNormal.x * MX / planeNormal.z;
+	double zy = -planeNormal.y * MY / planeNormal.z;
 
 	double angleX = zx / PX;
 	double angleY = zy / PY;
