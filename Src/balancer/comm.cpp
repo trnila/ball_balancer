@@ -7,7 +7,7 @@ extern "C" {
 	#include <usart.h>
 	#include <task.h>
 }
-#include "balancer/ball_balancer.h"
+#include "balancer/balancer.h"
 #include "balancer/buffer.h"
 #include "balancer/comm.h"
 #include <climits>
@@ -119,9 +119,8 @@ extern "C" void uart_init() {
 }
 
 void processCommand(uint8_t cmd, const uint8_t *args) {
-#if 0
 	if(cmd == CMD_RESET) {
-		balancer.reset();
+		balancer_reset();
 	} else if(cmd == CMD_SET_TARGET) {
 		int x = *(int*) args;
 		int y = *(int*) (args + sizeof(int));
@@ -130,19 +129,18 @@ void processCommand(uint8_t cmd, const uint8_t *args) {
 			send_error("target [%d, %d] out of range", x, y);
 		} else {
 			taskENTER_CRITICAL();
-			balancer.setTargetPosition(x, y);
+			balancer_set_target(x, y);
 			taskEXIT_CRITICAL();
 		}
 	} else if(cmd == CMD_GET_TARGET) {
 		int result[2];
 		taskENTER_CRITICAL();
-		result[0] = (int) balancer.getTargetPosition().x;
-		result[1] = (int) balancer.getTargetPosition().y;
+		result[0] = balancer_current_target().x;
+		result[1] = balancer_current_target().y;
 		taskEXIT_CRITICAL();
 
 		sendCommand(CMD_GET_TARGET | CMD_RESPONSE, (char *) &result, sizeof(result));
 	}
-#endif
 	if(cmd == CMD_PID) {
 		double p = *(double*) args;
 		double i = *(double*) (args + sizeof(double));

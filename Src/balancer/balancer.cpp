@@ -4,7 +4,7 @@
 #include <cstring>
 #include "stm32f1xx.h"
 #include "usart.h"
-#include "balancer/ball_balancer.h"
+#include "balancer/balancer.h"
 #include "cmsis_os.h"
 #include "portmacro.h"
 #include "balancer/comm.h"
@@ -22,7 +22,7 @@ void set_pwm(uint32_t channel, int us);
 Configuration conf;
 Vectorf prevPos, curPos, prevSpeed, curSpeed;
 Vectorf target = {SIZE_X / 2, SIZE_Y / 2};
-Vector3<double> planeNormal = Vector3<double>(0, 0, 1);
+Vector3<double> planeNormal;
 
 void calc(Measurement &measurement) {
 	// get actual reading
@@ -79,6 +79,8 @@ void controlTask(void const * argument) {
 	configASSERT(HAL_TIM_PWM_Start_IT(&htim3, TIM_CHANNEL_2) == HAL_OK);
 	configASSERT(HAL_ADCEx_Calibration_Start(&hadc1) == HAL_OK);
 
+	balancer_reset();
+
 	configASSERT(xTaskCreate(measureTask, "measure", 512, NULL, tskIDLE_PRIORITY, NULL) == pdTRUE);
 
 	TickType_t ticks = xTaskGetTickCount();
@@ -111,4 +113,19 @@ void set_pwm(uint32_t channel, int us) {
 
 	configASSERT(pulse < 0xFFFF);
 	__HAL_TIM_SET_COMPARE(&htim3, channel, pulse);
+}
+
+void balancer_reset() {
+	planeNormal = Vector3<double>(0, 0, 1);
+}
+
+Vectorf balancer_current_target() {
+	// TODO: fix concurency access
+	return target;
+}
+
+void balancer_set_target(int x, int y) {
+	// TODO: fix concurency access
+	target.x = x;
+	target.y = y;
 }
