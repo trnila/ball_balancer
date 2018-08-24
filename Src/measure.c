@@ -26,7 +26,7 @@ void running_avg_init(struct running_avg *avg, uint8_t size) {
 }
 
 void running_avg_add(struct running_avg *avg, uint16_t num) {
-	if(num < 200 || abs(num - avg->prev) > 50 && avg->fails < 20) {
+	if(avg->fails < 20 && (num < 200 || abs(num - avg->prev) > 50)) {
 		avg->fails++;
 		num = avg->prev;
 	} else {
