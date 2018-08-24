@@ -17,20 +17,13 @@
 
 
 extern "C" void controlTask(void const * argument);
+void set_pwm(uint32_t channel, int us);
 
 Configuration conf;
-
-void set_pwm(uint32_t channel, int us) {
-	double t = 1.0 / ((double) HAL_RCC_GetHCLKFreq() / (htim3.Init.Prescaler + 1));
-	int pulse = (double) us * (pow(10, -6)) / t;
-
-	configASSERT(pulse < 0xFFFF);
-	__HAL_TIM_SET_COMPARE(&htim3, channel, pulse);
-}
-
 Vectorf prevPos, curPos, prevSpeed, curSpeed;
 Vectorf target = {SIZE_X / 2, SIZE_Y / 2};
 Vector3<double> planeNormal = Vector3<double>(0, 0, 1);
+
 void calc(Measurement &measurement) {
 	// get actual reading
 	int RX, RY;
@@ -63,8 +56,8 @@ void calc(Measurement &measurement) {
 	planeNormal.y = cap(planeNormal.y - change.y);
 	planeNormal = normalize(planeNormal);
 
-	double zx = -planeNormal.x * MX / planeNormal.z;
-	double zy = -planeNormal.y * MY / planeNormal.z;
+	double zx = planeNormal.x * MX / planeNormal.z;
+	double zy = planeNormal.y * MY / planeNormal.z;
 
 	double angleX = zx / PX;
 	double angleY = zy / PY;
@@ -100,13 +93,22 @@ void controlTask(void const * argument) {
 
 		/*char buffer[40];
 		snprintf(buffer, sizeof(buffer), "%d,%d\r\n",
-		         (int) measurement.USX, (int) measurement.USY
+		         (int) measurement.RX, (int) measurement.RY
 		);
 		HAL_UART_Transmit(&huart1, (uint8_t *) buffer, strlen(buffer), HAL_MAX_DELAY);*/
 
-		//sendCommand(CMD_MEASUREMENT, (char *) &measurement, sizeof(measurement));
+		sendCommand(CMD_MEASUREMENT, (char *) &measurement, sizeof(measurement));
 		benchmark_stop(0, "measure & control cycle");
 
 		vTaskDelayUntil(&ticks, MEASUREMENT_PERIOD_MS);
 	}
+}
+
+
+void set_pwm(uint32_t channel, int us) {
+	double t = 1.0 / ((double) HAL_RCC_GetHCLKFreq() / (htim3.Init.Prescaler + 1));
+	int pulse = (double) us * (pow(10, -6)) / t;
+
+	configASSERT(pulse < 0xFFFF);
+	__HAL_TIM_SET_COMPARE(&htim3, channel, pulse);
 }

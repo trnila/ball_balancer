@@ -1,4 +1,3 @@
-#if 0
 extern "C" {
 	#include <FreeRTOSConfig.h>
 	#include <FreeRTOS.h>
@@ -28,7 +27,6 @@ extern "C" {
 }
 
 extern Configuration conf;
-extern BallBalancer balancer;
 
 
 struct Frame {
@@ -121,6 +119,7 @@ extern "C" void uart_init() {
 }
 
 void processCommand(uint8_t cmd, const uint8_t *args) {
+#if 0
 	if(cmd == CMD_RESET) {
 		balancer.reset();
 	} else if(cmd == CMD_SET_TARGET) {
@@ -134,7 +133,17 @@ void processCommand(uint8_t cmd, const uint8_t *args) {
 			balancer.setTargetPosition(x, y);
 			taskEXIT_CRITICAL();
 		}
-	} else if(cmd == CMD_PID) {
+	} else if(cmd == CMD_GET_TARGET) {
+		int result[2];
+		taskENTER_CRITICAL();
+		result[0] = (int) balancer.getTargetPosition().x;
+		result[1] = (int) balancer.getTargetPosition().y;
+		taskEXIT_CRITICAL();
+
+		sendCommand(CMD_GET_TARGET | CMD_RESPONSE, (char *) &result, sizeof(result));
+	}
+#endif
+	if(cmd == CMD_PID) {
 		double p = *(double*) args;
 		double i = *(double*) (args + sizeof(double));
 		double d = *(double*) (args + sizeof(double) * 2);
@@ -144,14 +153,6 @@ void processCommand(uint8_t cmd, const uint8_t *args) {
 		conf.const_i = i;
 		conf.const_d = d;
 		taskEXIT_CRITICAL();
-	} else if(cmd == CMD_GET_TARGET) {
-		int result[2];
-		taskENTER_CRITICAL();
-		result[0] = (int) balancer.getTargetPosition().x;
-		result[1] = (int) balancer.getTargetPosition().y;
-		taskEXIT_CRITICAL();
-
-		sendCommand(CMD_GET_TARGET | CMD_RESPONSE, (char *) &result, sizeof(result));
 	} else if(cmd == CMD_GETPID) {
 		double r[3];
 		taskENTER_CRITICAL();
@@ -223,4 +224,3 @@ void uartTask(void const * argument) {
 		}
 	}
 }
-#endif
