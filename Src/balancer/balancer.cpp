@@ -81,11 +81,11 @@ void controlTask(void const * argument) {
 	configASSERT(xTaskCreate(measureTask, "measure", 512, NULL, tskIDLE_PRIORITY, NULL) == pdTRUE);
 
 	TickType_t ticks = xTaskGetTickCount();
-	Measurement measurement{};
 	benchmark_init();
 	for(;;) {
 		benchmark_start(0);
 
+		Measurement measurement{};
 		calc(measurement);
 		set_pwm(TIM_CHANNEL_1, measurement.USX);
 		set_pwm(TIM_CHANNEL_2, measurement.USY);
