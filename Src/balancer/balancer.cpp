@@ -24,6 +24,20 @@ Vectorf prevPos, curPos, prevSpeed, curSpeed;
 Vectorf target = {SIZE_X / 2, SIZE_Y / 2};
 Vector3<double> planeNormal;
 
+void limit_vector(Vectorf &v, int limit) {
+	if(v.x < -limit) {
+		v.x = -limit;
+	} else if(v.x > limit) {
+		v.x = limit;
+	}
+
+	if(v.y < -limit) {
+		v.y = -limit;
+	} else if(v.y > limit) {
+		v.y = limit;
+	}
+}
+
 void calc(Measurement &measurement) {
 	// get actual reading
 	int RX, RY;
@@ -32,17 +46,21 @@ void calc(Measurement &measurement) {
 	// calculate pos, speeds
 	bool touch = !(RX < RminX || RX > RmaxX || RY < RminY || RY > RmaxY);
 	if(!touch) {
-		return;
+		balancer_reset();
+		prevPos = curPos = target;
+	} else {
+		// map resistance to position in milimetters
+		prevPos = curPos;
+		curPos.x = map(RX, RminX, RmaxX, 0, SIZE_X);
+		curPos.y = map(RY, RminY, RmaxY, 0, SIZE_Y);
 	}
-
-	// map resistance to position in milimetters
-	prevPos = curPos;
-	curPos.x = map(RX, RminX, RmaxX, 0, SIZE_X);
-	curPos.y = map(RY, RminY, RmaxY, 0, SIZE_Y);
 
 	prevSpeed = curSpeed;
 	curSpeed = (curPos - prevPos) / (MEASUREMENT_PERIOD_MS / 1000.0);
 	Vectorf acceleration = (curSpeed - prevSpeed) / (MEASUREMENT_PERIOD_MS / 1000.0);
+
+	limit_vector(curSpeed, 4000);
+	limit_vector(acceleration, 4000);
 
 
 	// calc pid
