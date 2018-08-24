@@ -27,10 +27,7 @@ Vector3<double> planeNormal;
 void calc(Measurement &measurement) {
 	// get actual reading
 	int RX, RY;
-	portENTER_CRITICAL();
-	RX = X;
-	RY = Y;
-	portEXIT_CRITICAL();
+	measure_get_current(&RX, &RY);
 
 	// calculate pos, speeds
 	bool touch = !(RX < RminX || RX > RmaxX || RY < RminY || RY > RmaxY);

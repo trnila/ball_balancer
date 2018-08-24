@@ -17,6 +17,10 @@ struct running_avg {
 	int fails;
 };
 
+
+static struct running_avg avg_x, avg_y;
+static int X, Y;
+
 void running_avg_init(struct running_avg *avg, uint8_t size) {
 	avg->index = 0;
 	avg->size = size;
@@ -49,10 +53,6 @@ uint16_t running_avg_calculate(struct running_avg *avg) {
 	return sum / avg->size;
 }
 
-struct running_avg avg_x, avg_y;
-
-int X, Y;
-
 static void pinMode(uint32_t pin, uint32_t mode) {
 	GPIO_InitTypeDef GPIO_InitStruct;
 	GPIO_InitStruct.Pin = pin;
@@ -63,11 +63,11 @@ static void pinMode(uint32_t pin, uint32_t mode) {
 }
 
 
-static void digitalWrite(int pin, GPIO_PinState state) {
+static void digitalWrite(uint16_t pin, GPIO_PinState state) {
 	HAL_GPIO_WritePin(GPIOA, pin, state);
 }
 
-static int adcRead(int channel) {
+static uint16_t adcRead(uint32_t channel) {
 	ADC_ChannelConfTypeDef sConfig;
 	sConfig.Channel = channel;
 	sConfig.Rank = 1;
@@ -76,11 +76,17 @@ static int adcRead(int channel) {
 
 	configASSERT(HAL_ADC_Start(&hadc1) == HAL_OK);
 	configASSERT(HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY) == HAL_OK);
-	int val = HAL_ADC_GetValue(&hadc1);
+	uint16_t val = (uint16_t ) HAL_ADC_GetValue(&hadc1);
 	HAL_ADC_Stop(&hadc1);
 	return val;
 }
 
+void measure_get_current(int *x, int *y) {
+	portENTER_CRITICAL();
+	*x = X;
+	*y = Y;
+	portEXIT_CRITICAL();
+}
 
 void measureTask(void *argument) {
 	running_avg_init(&avg_x, 10);
