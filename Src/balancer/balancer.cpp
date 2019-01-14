@@ -14,6 +14,14 @@
 #include "balancer/utils.h"
 #include "balancer/vector2.h"
 #include "balancer/vector3.h"
+#include <ros.h>
+#include <std_msgs/String.h>
+
+ros::NodeHandle nh;
+std_msgs::String str_msg;
+ros::Publisher chatter("chatter", &str_msg);
+
+char hello[25];
 
 
 extern "C" void controlTask(void const * argument);
@@ -89,6 +97,28 @@ void calc(Measurement &measurement) {
 }
 
 void controlTask(void const * argument) {
+	nh.initNode();
+	nh.advertise(chatter);
+
+
+	int i = 0;
+	for(;;) {
+		str_msg.data = hello;
+		sprintf(hello, "hello %d", i++);
+
+		chatter.publish(&str_msg);
+		nh.spinOnce();
+
+		int val;
+		if(nh.getParam("/serial_node/baud", &val)) {
+			nh.spinOnce();
+		}
+
+		vTaskDelay(10);
+	}
+
+	for(;;);
+
 	// initialize pwm for servos
 	configASSERT(HAL_TIM_PWM_Start_IT(&htim3, TIM_CHANNEL_1) == HAL_OK);
 	configASSERT(HAL_TIM_PWM_Start_IT(&htim3, TIM_CHANNEL_2) == HAL_OK);

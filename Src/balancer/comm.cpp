@@ -61,6 +61,7 @@ void send_error(const char* fmt, ...) {
 }
 
 void sendCommand(uint8_t cmd, char *data, size_t size) {
+	asm("bkpt #1");
 	const int HEADER_SIZE = 1;
 
 	taskENTER_CRITICAL();
@@ -84,7 +85,7 @@ void sendCommand(uint8_t cmd, char *data, size_t size) {
 	xTaskNotify(uartHandle, TX_BIT, eSetBits);
 }
 
-
+/*
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 	if(current_rx_frame->buffer[current_rx_frame->size] == 0) {
 		xQueueSendFromISR(rx_queue, &current_rx_frame, NULL);
@@ -103,19 +104,19 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 
 	configASSERT(HAL_UART_Receive_IT(&huart1, (uint8_t*) current_rx_frame->buffer + current_rx_frame->size, 1) == HAL_OK);
 }
-
+/*
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
 	transmitting = 0;
 	xTaskNotifyFromISR(uartHandle, TX_BIT, eSetBits, &xHigherPriorityTaskWoken);
-}
+}*/
 
 extern "C" void uart_init() {
-	current_rx_frame = rx.borrow();
+	/*current_rx_frame = rx.borrow();
 	current_rx_frame->size = 0;
 
 	configASSERT(rx_queue = xQueueCreate(5, sizeof(Frame*)));
 	configASSERT(tx_queue = xQueueCreate(5, sizeof(Frame*)));
-	configASSERT(HAL_UART_Receive_IT(&huart1, (uint8_t*) current_rx_frame->buffer, 1) == HAL_OK);
+	configASSERT(HAL_UART_Receive_IT(&huart1, (uint8_t*) current_rx_frame->buffer, 1) == HAL_OK);*/
 }
 
 void processCommand(uint8_t cmd, const uint8_t *args) {
