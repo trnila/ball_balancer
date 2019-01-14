@@ -94,7 +94,9 @@ class STM32Hardware {
 
         if(twind != tfind){
           uint16_t len = tfind < twind ? twind - tfind : tbuflen - tfind;
-          HAL_UART_Transmit_DMA(huart, &(tbuf[tfind]), len);
+          if(HAL_UART_Transmit_DMA(huart, &(tbuf[tfind]), len) != HAL_OK) {
+              asm("bkpt #1"); for(;;);
+          }
           tfind = (tfind + len) & (tbuflen - 1);
         }
         mutex = false;
