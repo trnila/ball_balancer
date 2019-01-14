@@ -49,7 +49,7 @@ class STM32Hardware {
     uint32_t rind;
     inline uint32_t getRdmaInd(void){ return (rbuflen - huart->hdmarx->Instance->CNDTR) & (rbuflen - 1); }
 
-    const static uint16_t tbuflen = 256;
+    const static uint16_t tbuflen = 512;
     uint8_t tbuf[tbuflen];
     uint32_t twind, tfind;
 
@@ -98,12 +98,18 @@ class STM32Hardware {
       }
     }
 
-    void write(uint8_t* data, int length){
-      int n = length;
+    void write(uint8_t* data, int n){
       n = n <= tbuflen ? n : tbuflen;
 
+      uint16_t free = (tfind - twind) + (-((int) (tfind <= twind)) & tbuflen);
+      if(free <= n) {
+      	// transmit buffer overflow
+	    // try increasing tbuflen or block until HAL_UART_TxCpltCallback() is called
+      	asm("bkpt #1"); for(;;);
+      }
+
       int n_tail = n <= tbuflen - twind ? n : tbuflen - twind;
-      memcpy(&(tbuf[twind]), data, n_tail);
+      memcpy(&tbuf[twind], data, n_tail);
       twind = (twind + n) & (tbuflen - 1);
 
       if(n != n_tail){
