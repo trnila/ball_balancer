@@ -86,8 +86,8 @@ void fake_measure(int *X, int *Y) {
 void calc(ballbalancer_msgs::Measurement &measurement) {
 	// get actual reading
 	int RX, RY;
-	//measure_get_current(&RX, &RY);
-	fake_measure(&RX, &RY);
+	measure_get_current(&RX, &RY);
+	//fake_measure(&RX, &RY);
 
 	// calculate pos, speeds
 	bool touch = !(RX < RminX || RX > RmaxX || RY < RminY || RY > RmaxY);
