@@ -7,25 +7,17 @@
 #include "balancer/balancer.h"
 #include "cmsis_os.h"
 #include "portmacro.h"
-#include "balancer/comm.h"
 #include "adc.h"
-#include "balancer/benchmark.h"
 #include "measure.h"
 #include "balancer/utils.h"
 #include "balancer/vector2.h"
 #include "balancer/vector3.h"
 #include <ros.h>
-#include <std_msgs/String.h>
-#include <std_srvs/Trigger.h>
 #include <std_srvs/SetBool.h>
-#include <geometry_msgs/Point.h>
 #include <ballbalancer_msgs/Measurement.h>
 #include <ballbalancer_msgs/SetTargetPosition.h>
 
 ros::NodeHandle nh;
-
-geometry_msgs::Point measured;
-ros::Publisher adcval("measured_position", &measured);
 
 ballbalancer_msgs::Measurement measurement;
 ros::Publisher measurement_topic("measurements", &measurement);
