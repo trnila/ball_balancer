@@ -7,14 +7,35 @@
 #include "balancer/balancer.h"
 #include "cmsis_os.h"
 #include "portmacro.h"
-#include "balancer/comm.h"
 #include "adc.h"
-#include "balancer/benchmark.h"
 #include "measure.h"
 #include "balancer/utils.h"
 #include "balancer/vector2.h"
 #include "balancer/vector3.h"
+#include <ros.h>
+#include <std_srvs/SetBool.h>
+#include <ballbalancer_msgs/Measurement.h>
+#include <ballbalancer_msgs/SetTargetPosition.h>
 
+ros::NodeHandle nh;
+
+ballbalancer_msgs::Measurement measurement;
+ros::Publisher measurement_topic("measurements", &measurement);
+
+
+
+void set_control(const std_srvs::SetBoolRequest &req, std_srvs::SetBoolResponse &res);
+ros::ServiceServer<std_srvs::SetBoolRequest, std_srvs::SetBoolResponse> control_srv("/control", set_control);
+
+
+void set_target_position(const ballbalancer_msgs::SetTargetPositionRequest &req, ballbalancer_msgs::SetTargetPositionResponse &resp);
+ros::ServiceServer<ballbalancer_msgs::SetTargetPositionRequest, ballbalancer_msgs::SetTargetPositionResponse> set_target_pos_srv("SetTargetPosition", set_target_position);
+
+
+// flush remaining transfers when current transmission completes
+extern "C" void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
+	nh.getHardware()->flush();
+}
 
 extern "C" void controlTask(void const * argument);
 void set_pwm(uint32_t channel, int us);
@@ -38,10 +59,27 @@ void limit_vector(Vectorf &v, int limit) {
 	}
 }
 
-void calc(Measurement &measurement) {
+void fake_measure(int *X, int *Y) {
+	const int r = 50/2;
+
+	static int side = 1;
+	static int x = -r;
+
+	*X = side * x + target.x;
+	*Y = side * (int)sqrt(r*r - x*x) + target.y;
+
+	x++;
+	if(x == r) {
+		side *= -1;
+		x = -r;
+	}
+}
+
+void calc(ballbalancer_msgs::Measurement &measurement) {
 	// get actual reading
 	int RX, RY;
 	measure_get_current(&RX, &RY);
+	//fake_measure(&RX, &RY);
 
 	// calculate pos, speeds
 	bool touch = !(RX < RminX || RX > RmaxX || RY < RminY || RY > RmaxY);
@@ -80,15 +118,39 @@ void calc(Measurement &measurement) {
 	int USX = CENTER_X_US + angleX / 0.5f * 600;
 	int USY = CENTER_Y_US + angleY / 0.5f * 600;
 
-	measurement.RX = RX;
-	measurement.RY = RY;
-	measurement.posx = curPos.x;
-	measurement.posy = curPos.y;
-	measurement.USX = USX;
-	measurement.USY = USY;
+	measurement.raw_x = RX;
+	measurement.raw_y = RY;
+	measurement.pos_x = curPos.x;
+	measurement.pos_y = curPos.y;
+	measurement.servo_x = USX;
+	measurement.servo_y = USY;
+	measurement.target_x = target.x;
+	measurement.target_y = target.y;
 }
 
+void set_control(const std_srvs::SetBoolRequest &req, std_srvs::SetBoolResponse &res) {
+	if(req.data) {
+		nh.logerror("enabling control");
+	} else {
+		nh.logerror("disabling control");
+	}
+}
+
+void set_target_position(const ballbalancer_msgs::SetTargetPositionRequest &req, ballbalancer_msgs::SetTargetPositionResponse &resp) {
+	nh.logdebug("Setting new target position");
+	balancer_set_target(req.x, req.y);
+}
+
+
+
 void controlTask(void const * argument) {
+	nh.initNode();
+
+	nh.advertise(measurement_topic);
+
+	nh.advertiseService(control_srv);
+	nh.advertiseService(set_target_pos_srv);
+
 	// initialize pwm for servos
 	configASSERT(HAL_TIM_PWM_Start_IT(&htim3, TIM_CHANNEL_1) == HAL_OK);
 	configASSERT(HAL_TIM_PWM_Start_IT(&htim3, TIM_CHANNEL_2) == HAL_OK);
@@ -99,24 +161,14 @@ void controlTask(void const * argument) {
 	configASSERT(xTaskCreate(measureTask, "measure", 512, NULL, tskIDLE_PRIORITY, NULL) == pdTRUE);
 
 	TickType_t ticks = xTaskGetTickCount();
-	benchmark_init();
 	for(;;) {
-		benchmark_start(0);
-
-		Measurement measurement{};
 		calc(measurement);
-		set_pwm(TIM_CHANNEL_1, measurement.USX);
-		set_pwm(TIM_CHANNEL_2, measurement.USY);
+		set_pwm(TIM_CHANNEL_1, measurement.servo_x);
+		set_pwm(TIM_CHANNEL_2, measurement.servo_y);
 
-		/*char buffer[40];
-		snprintf(buffer, sizeof(buffer), "%d,%d\r\n",
-		         (int) measurement.RX, (int) measurement.RY
-		);
-		HAL_UART_Transmit(&huart1, (uint8_t *) buffer, strlen(buffer), HAL_MAX_DELAY);*/
+		measurement_topic.publish(&measurement);
 
-		sendCommand(CMD_MEASUREMENT, (char *) &measurement, sizeof(measurement));
-		benchmark_stop(0, "measure & control cycle");
-
+		nh.spinOnce();
 		vTaskDelayUntil(&ticks, MEASUREMENT_PERIOD_MS);
 	}
 }

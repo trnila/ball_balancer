@@ -9,7 +9,7 @@
   * inserted by the user or by software development tools
   * are owned by their respective copyright owners.
   *
-  * Copyright (c) 2018 STMicroelectronics International N.V. 
+  * Copyright (c) 2019 STMicroelectronics International N.V. 
   * All rights reserved.
   *
   * Redistribution and use in source and binary forms, with or without 
@@ -57,14 +57,12 @@
 
 /* Variables -----------------------------------------------------------------*/
 osThreadId controlHandle;
-osThreadId uartHandle;
 
 /* USER CODE BEGIN Variables */
 /* USER CODE END Variables */
 
 /* Function prototypes -------------------------------------------------------*/
 void controlTask(void const * argument);
-extern void uartTask(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -78,8 +76,6 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
-	void uart_init();
-	uart_init();
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -98,10 +94,6 @@ void MX_FREERTOS_Init(void) {
   /* definition and creation of control */
   osThreadDef(control, controlTask, osPriorityRealtime, 0, 512);
   controlHandle = osThreadCreate(osThread(control), NULL);
-
-  /* definition and creation of uart */
-  osThreadDef(uart, uartTask, osPriorityIdle, 0, 256);
-  uartHandle = osThreadCreate(osThread(uart), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */

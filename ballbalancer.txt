@@ -1,6 +1,6 @@
 Configuration	ballbalancer
 STM32CubeMX 	4.26.0
-Date	07/22/2018
+Date	01/15/2019
 MCU	STM32F103C8Tx
 
 
@@ -11,7 +11,6 @@ ADC1	IN1	ADC1_IN1	PA1
 SYS	Serial Wire	SYS_JTCK-SWCLK	PA14
 SYS	Serial Wire	SYS_JTMS-SWDIO	PA13
 SYS	SysTick	SYS_VS_Systick	VP_SYS_VS_Systick
-TIM2	Internal Clock	TIM2_VS_ClockSourceINT	VP_TIM2_VS_ClockSourceINT
 TIM3	PWM Generation CH1	TIM3_CH1	PB4
 TIM3	PWM Generation CH2	TIM3_CH2	PB5
 USART1	Asynchronous	USART1_RX	PA10

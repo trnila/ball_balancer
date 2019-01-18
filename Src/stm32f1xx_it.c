@@ -4,7 +4,7 @@
   * @brief   Interrupt Service Routines.
   ******************************************************************************
   *
-  * COPYRIGHT(c) 2018 STMicroelectronics
+  * COPYRIGHT(c) 2019 STMicroelectronics
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -41,9 +41,9 @@ BaseType_t xHigherPriorityTaskWoken;
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
-extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim3;
 extern DMA_HandleTypeDef hdma_usart1_tx;
+extern DMA_HandleTypeDef hdma_usart1_rx;
 extern UART_HandleTypeDef huart1;
 
 /******************************************************************************/
@@ -185,17 +185,17 @@ void DMA1_Channel4_IRQHandler(void)
 }
 
 /**
-* @brief This function handles TIM2 global interrupt.
+* @brief This function handles DMA1 channel5 global interrupt.
 */
-void TIM2_IRQHandler(void)
+void DMA1_Channel5_IRQHandler(void)
 {
-  /* USER CODE BEGIN TIM2_IRQn 0 */
+  /* USER CODE BEGIN DMA1_Channel5_IRQn 0 */
 
-  /* USER CODE END TIM2_IRQn 0 */
-  HAL_TIM_IRQHandler(&htim2);
-  /* USER CODE BEGIN TIM2_IRQn 1 */
+  /* USER CODE END DMA1_Channel5_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_usart1_rx);
+  /* USER CODE BEGIN DMA1_Channel5_IRQn 1 */
 
-  /* USER CODE END TIM2_IRQn 1 */
+  /* USER CODE END DMA1_Channel5_IRQn 1 */
 }
 
 /**
